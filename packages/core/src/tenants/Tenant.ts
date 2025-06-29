@@ -200,6 +200,8 @@ export default class Tenant implements TenantContext {
       );
     }
 
+    // Change password is now handled within the demo app
+
     // Mount experience app
     app.use(
       compose([
