@@ -9,12 +9,11 @@ import type Router from 'koa-router';
 import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
+import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
-import { encryptUserPassword } from '#src/libraries/user.utils.js';
-import { splitPassword } from '#src/utils/zero-knowledge-password.js';
 
 import { experienceRoutes } from './const.js';
 import { type ExperienceInteractionRouterContext } from './types.js';
@@ -238,7 +237,7 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       );
 
       const user = await tenant.queries.users.findUserById(identifiedUserId);
-      
+
       ctx.body = {
         encryptedSecret: user.encryptedSecret,
       };
@@ -274,14 +273,14 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       // Get the user
       const user = await tenant.queries.users.findUserById(identifiedUserId);
 
+      // Both passwords are already server portions (pre-split by client)
+
       // Verify the old password is correct
       await tenant.libraries.users.verifyUserPassword(user, oldPassword);
 
-      // Split the new password for zero-knowledge encryption
-      const { serverPassword } = await splitPassword(newPassword);
-
       // Encrypt the new server password
-      const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(serverPassword);
+      const { passwordEncrypted, passwordEncryptionMethod } =
+        await encryptUserPassword(newPassword);
 
       // Update user with new password and optionally new encrypted secret
       await tenant.queries.users.updateUserById(identifiedUserId, {

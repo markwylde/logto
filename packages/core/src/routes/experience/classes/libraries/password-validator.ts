@@ -5,7 +5,6 @@ import { argon2Verify } from 'hash-wasm';
 import RequestError from '#src/errors/RequestError/index.js';
 import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import assertThat from '#src/utils/assert-that.js';
-import { splitPassword } from '#src/utils/zero-knowledge-password.js';
 
 import { type InteractionProfile } from '../../types.js';
 
@@ -37,6 +36,10 @@ export class PasswordValidator {
   /**
    * Validate password against the given password policy and current user's profile.
    *
+   * Note: This method receives the server portion of the password only.
+   * Full password policy validation (length, complexity) should be done client-side
+   * before splitting. Here we primarily check for password reuse.
+   *
    * @throws {RequestError} with status code 422 if the password is against the policy.
    * @throws {RequestError} with status code 422 if the password is the same as the current user's password.
    */
@@ -58,22 +61,19 @@ export class PasswordValidator {
     if (this.user) {
       const { passwordEncrypted: oldPasswordEncrypted, passwordEncryptionMethod } = this.user;
 
-      // Split the password for zero-knowledge encryption before verification
-      const { serverPassword } = await splitPassword(password);
-
+      // Password received here is already the server portion (pre-split by client)
       assertThat(
         !oldPasswordEncrypted ||
           // If the password is not encrypted with Argon2i, allow to reset the same password with Argon2i
           passwordEncryptionMethod !== UsersPasswordEncryptionMethod.Argon2i ||
-          !(await argon2Verify({ password: serverPassword, hash: oldPasswordEncrypted })),
+          !(await argon2Verify({ password, hash: oldPasswordEncrypted })),
         new RequestError({ code: 'user.same_password', status: 422 })
       );
     }
   }
 
   public async createPasswordDigest(password: string) {
-    // Split the password for zero-knowledge encryption
-    const { serverPassword } = await splitPassword(password);
-    return encryptUserPassword(serverPassword);
+    // Password received here is already the server portion (pre-split by client)
+    return encryptUserPassword(password);
   }
 }
