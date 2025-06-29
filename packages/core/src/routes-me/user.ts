@@ -107,6 +107,28 @@ export default function userRoutes<T extends AuthedMeRouter>(
     }
   );
 
+  router.get(
+    '/password/profile',
+    koaGuard({
+      status: [200],
+      response: object({
+        hasPassword: literal(true).or(literal(false)),
+        encryptedSecret: string().nullable(),
+      }),
+    }),
+    async (ctx, next) => {
+      const { id: userId } = ctx.auth;
+      const user = await findUserById(userId);
+
+      ctx.body = {
+        hasPassword: Boolean(user.passwordEncrypted),
+        encryptedSecret: user.encryptedSecret ?? null,
+      };
+
+      return next();
+    }
+  );
+
   router.post(
     '/password/verify',
     koaGuard({
@@ -119,6 +141,7 @@ export default function userRoutes<T extends AuthedMeRouter>(
       const user = await findUserById(userId);
       assertThat(!user.isSuspended, new RequestError({ code: 'user.suspended', status: 401 }));
 
+      // Password received here is already the server portion (pre-split by client)
       await verifyUserPassword(user, password);
       await createVerificationStatus(userId, null);
 
@@ -130,10 +153,16 @@ export default function userRoutes<T extends AuthedMeRouter>(
 
   router.post(
     '/password',
-    koaGuard({ body: object({ password: string().min(1) }), status: [204, 400, 401] }),
+    koaGuard({
+      body: object({
+        password: string().min(1),
+        encryptedSecret: string().optional(),
+      }),
+      status: [204, 400, 401],
+    }),
     async (ctx, next) => {
       const { id: userId } = ctx.auth;
-      const { password } = ctx.guard.body;
+      const { password, encryptedSecret } = ctx.guard.body;
 
       const user = await findUserById(userId);
 
@@ -150,8 +179,15 @@ export default function userRoutes<T extends AuthedMeRouter>(
         throw new RequestError('password.rejected', { issues });
       }
 
+      // Password received here is already the server portion (pre-split by client)
       const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
-      await updateUserById(userId, { passwordEncrypted, passwordEncryptionMethod });
+
+      // Update user with new password and optionally new encrypted secret
+      await updateUserById(userId, {
+        passwordEncrypted,
+        passwordEncryptionMethod,
+        ...(encryptedSecret && { encryptedSecret }),
+      });
 
       ctx.status = 204;
 

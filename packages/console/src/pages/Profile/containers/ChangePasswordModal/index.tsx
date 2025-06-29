@@ -13,6 +13,7 @@ import TextInput from '@/ds-components/TextInput';
 import { useStaticApi } from '@/hooks/use-api';
 import { useConfirmModal } from '@/hooks/use-confirm-modal';
 import useTenantPathname from '@/hooks/use-tenant-pathname';
+import { splitPassword } from '@/utils/zero-knowledge-password';
 
 import ExperienceLikeModal from '../../components/ExperienceLikeModal';
 import { handleError } from '../../utils';
@@ -61,7 +62,11 @@ function ChangePasswordModal() {
     clearErrors();
     void handleSubmit(async ({ newPassword }) => {
       try {
-        await api.post(`me/password`, { json: { password: newPassword } });
+        // Split password for zero-knowledge encryption
+        const { serverPassword } = await splitPassword(newPassword);
+
+        // Send only the server portion to the API
+        await api.post(`me/password`, { json: { password: serverPassword } });
         toast.success(t('profile.password_changed'));
         onClose();
       } catch (error: unknown) {

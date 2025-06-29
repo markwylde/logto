@@ -9,6 +9,7 @@ import type Router from 'koa-router';
 import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
+import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import { type WithLogContext } from '#src/middleware/koa-audit-log.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
@@ -207,6 +208,86 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       }
 
       await experienceInteraction.save();
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  // Get current user's profile (for authenticated users to get their encrypted secret)
+  router.get(
+    `${experienceRoutes.profile}`,
+    koaGuard({
+      status: [200, 401, 404],
+      response: z.object({
+        encryptedSecret: z.string().nullable(),
+      }),
+    }),
+    async (ctx, next) => {
+      const { experienceInteraction } = ctx;
+      const { identifiedUserId } = experienceInteraction;
+
+      assertThat(
+        identifiedUserId,
+        new RequestError({
+          code: 'session.identifier_not_found',
+          status: 401,
+        })
+      );
+
+      const user = await tenant.queries.users.findUserById(identifiedUserId);
+
+      ctx.body = {
+        encryptedSecret: user.encryptedSecret,
+      };
+
+      return next();
+    }
+  );
+
+  // Change password for authenticated users
+  router.put(
+    `${experienceRoutes.profile}/password`,
+    koaGuard({
+      body: z.object({
+        oldPassword: z.string(),
+        newPassword: z.string(),
+        encryptedSecret: z.string().optional(),
+      }),
+      status: [204, 400, 401, 403, 422],
+    }),
+    async (ctx, next) => {
+      const { experienceInteraction, guard, createLog } = ctx;
+      const { oldPassword, newPassword, encryptedSecret } = guard.body;
+      const { identifiedUserId } = experienceInteraction;
+
+      assertThat(
+        identifiedUserId,
+        new RequestError({
+          code: 'session.identifier_not_found',
+          status: 401,
+        })
+      );
+
+      // Get the user
+      const user = await tenant.queries.users.findUserById(identifiedUserId);
+
+      // Both passwords are already server portions (pre-split by client)
+
+      // Verify the old password is correct
+      await tenant.libraries.users.verifyUserPassword(user, oldPassword);
+
+      // Encrypt the new server password
+      const { passwordEncrypted, passwordEncryptionMethod } =
+        await encryptUserPassword(newPassword);
+
+      // Update user with new password and optionally new encrypted secret
+      await tenant.queries.users.updateUserById(identifiedUserId, {
+        passwordEncrypted,
+        passwordEncryptionMethod,
+        ...(encryptedSecret && { encryptedSecret }),
+      });
 
       ctx.status = 204;
 

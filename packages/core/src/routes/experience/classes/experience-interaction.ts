@@ -6,6 +6,7 @@ import RequestError from '#src/errors/RequestError/index.js';
 import { type LogEntry } from '#src/middleware/koa-audit-log.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
+import { encryptedSecretStore } from '#src/utils/encrypted-secret-store.js';
 
 import {
   interactionStorageGuard,
@@ -59,6 +60,9 @@ export default class ExperienceInteraction {
     verified: false,
     skipped: false,
   };
+
+  /** The encrypted client secret for zero-knowledge encryption. */
+  private encryptedClientSecret?: string;
 
   /** The interaction event for the current interaction. */
   #interactionEvent: InteractionEvent;
@@ -118,6 +122,7 @@ export default class ExperienceInteraction {
         verified: false,
         skipped: false,
       },
+      encryptedClientSecret,
     } = result.data;
 
     this.#interactionEvent = interactionEvent;
@@ -125,6 +130,7 @@ export default class ExperienceInteraction {
     this.profile = new Profile(libraries, queries, profile, interactionContext);
     this.mfa = new Mfa(libraries, queries, mfa, interactionContext);
     this.captcha = captcha;
+    this.encryptedClientSecret = encryptedClientSecret;
 
     for (const record of verificationRecords) {
       const instance = buildVerificationRecord(libraries, queries, record);
@@ -519,9 +525,12 @@ export default class ExperienceInteraction {
 
     const redirectTo = await provider.interactionResult(this.ctx.req, this.ctx.res, {
       login: { accountId: user.id },
-      // Persist the interaction status to the OIDC session after interaction submission
-      ...this.toJson(),
     });
+
+    // Store the encrypted client secret in our temporary store for retrieval during token exchange
+    if (this.encryptedClientSecret && user.id) {
+      encryptedSecretStore.set(user.id, this.encryptedClientSecret);
+    }
 
     this.ctx.body = { redirectTo };
 
@@ -542,7 +551,7 @@ export default class ExperienceInteraction {
 
   /** Convert the current interaction to JSON, so that it can be stored as the OIDC provider interaction result */
   public toJson(): InteractionStorage {
-    const { interactionEvent, userId, captcha } = this;
+    const { interactionEvent, userId, captcha, encryptedClientSecret } = this;
 
     return {
       interactionEvent,
@@ -551,7 +560,22 @@ export default class ExperienceInteraction {
       mfa: this.mfa.data,
       verificationRecords: this.verificationRecordsArray.map((record) => record.toJson()),
       captcha,
+      encryptedClientSecret,
     };
+  }
+
+  /**
+   * Set the encrypted client secret for zero-knowledge encryption.
+   */
+  public setEncryptedClientSecret(encryptedClientSecret: string) {
+    this.encryptedClientSecret = encryptedClientSecret;
+  }
+
+  /**
+   * Get the encrypted client secret for zero-knowledge encryption.
+   */
+  public getEncryptedClientSecret() {
+    return this.encryptedClientSecret;
   }
 
   private get verificationRecordsArray() {

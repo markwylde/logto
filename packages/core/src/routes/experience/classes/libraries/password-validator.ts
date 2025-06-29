@@ -36,6 +36,10 @@ export class PasswordValidator {
   /**
    * Validate password against the given password policy and current user's profile.
    *
+   * Note: This method receives the server portion of the password only.
+   * Full password policy validation (length, complexity) should be done client-side
+   * before splitting. Here we primarily check for password reuse.
+   *
    * @throws {RequestError} with status code 422 if the password is against the policy.
    * @throws {RequestError} with status code 422 if the password is the same as the current user's password.
    */
@@ -57,6 +61,7 @@ export class PasswordValidator {
     if (this.user) {
       const { passwordEncrypted: oldPasswordEncrypted, passwordEncryptionMethod } = this.user;
 
+      // Password received here is already the server portion (pre-split by client)
       assertThat(
         !oldPasswordEncrypted ||
           // If the password is not encrypted with Argon2i, allow to reset the same password with Argon2i
@@ -68,6 +73,7 @@ export class PasswordValidator {
   }
 
   public async createPasswordDigest(password: string) {
+    // Password received here is already the server portion (pre-split by client)
     return encryptUserPassword(password);
   }
 }

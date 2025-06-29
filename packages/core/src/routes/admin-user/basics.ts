@@ -201,6 +201,23 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       const id = await generateUserId();
 
+      // Handle password encryption
+      const passwordData = await (async () => {
+        if (password) {
+          // Password received here is already the server portion (pre-split by client)
+          return encryptUserPassword(password);
+        }
+
+        if (passwordDigest) {
+          return {
+            passwordEncrypted: passwordDigest,
+            passwordEncryptionMethod: passwordAlgorithm,
+          };
+        }
+
+        return {};
+      })();
+
       const [user] = await insertUser(
         {
           id,
@@ -210,13 +227,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
           name,
           avatar,
           ...conditional(customData && { customData }),
-          ...conditional(password && (await encryptUserPassword(password))),
-          ...conditional(
-            passwordDigest && {
-              passwordEncrypted: passwordDigest,
-              passwordEncryptionMethod: passwordAlgorithm,
-            }
-          ),
+          ...passwordData,
           ...conditional(profile && { profile }),
         },
         []
@@ -275,6 +286,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       await findUserById(userId);
 
+      // Password received here is already the server portion (pre-split by client)
       const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
 
       const user = await updateUserById(userId, {
@@ -302,6 +314,8 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
       } = ctx.guard;
 
       const user = await findUserById(userId);
+
+      // Password received here is already the server portion (pre-split by client)
       await verifyUserPassword(user, password);
 
       ctx.status = 204;

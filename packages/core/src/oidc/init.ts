@@ -29,6 +29,7 @@ import { type LogtoConfigLibrary } from '#src/libraries/logto-config.js';
 import koaAppSecretTranspilation from '#src/middleware/koa-app-secret-transpilation.js';
 import koaAuditLog from '#src/middleware/koa-audit-log.js';
 import koaBodyEtag from '#src/middleware/koa-body-etag.js';
+import koaEncryptedSecretInterceptor from '#src/middleware/koa-encrypted-secret-interceptor.js';
 import koaResourceParam from '#src/middleware/koa-resource-param.js';
 import postgresAdapter from '#src/oidc/adapter.js';
 import {
@@ -421,6 +422,7 @@ export default function initOidc(
 
   oidc.use(koaAppSecretTranspilation(queries));
   oidc.use(koaBodyEtag());
+  oidc.use(koaEncryptedSecretInterceptor(oidc, queries, envSet.tenantId));
 
   if (EnvSet.values.isCloud) {
     oidc.use(koaTokenUsageGuard(subscription));

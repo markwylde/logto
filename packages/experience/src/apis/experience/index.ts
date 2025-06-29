@@ -6,10 +6,11 @@ import {
 } from '@logto/schemas';
 
 import { type ContinueFlowInteractionEvent } from '@/types';
+import { splitPassword } from '@/utils/zero-knowledge-encryption';
 
 import api from '../api';
 
-import { experienceApiRoutes, type VerificationResponse } from './const';
+import { experienceApiRoutes, type VerificationResponse, type PasswordVerificationResponse } from './const';
 import {
   initInteraction,
   identifyUser,
@@ -63,19 +64,30 @@ export const signInWithVerifiedIdentifier = async (verificationId: string) => {
 };
 
 // Password APIs
+export const verifyPassword = async (payload: PasswordVerificationPayload) => {
+  return api
+    .post(`${experienceApiRoutes.verification}/password`, {
+      json: payload,
+    })
+    .json<PasswordVerificationResponse>();
+};
+
 export const signInWithPasswordIdentifier = async (
   payload: PasswordVerificationPayload,
   captchaToken?: string
 ) => {
   await initInteraction(InteractionEvent.SignIn, captchaToken);
 
-  const { verificationId } = await api
-    .post(`${experienceApiRoutes.verification}/password`, {
-      json: payload,
-    })
-    .json<VerificationResponse>();
+  const passwordVerificationResponse = await verifyPassword(payload);
 
-  return identifyAndSubmitInteraction({ verificationId });
+  const { verificationId } = passwordVerificationResponse;
+  const submitResult = await identifyAndSubmitInteraction({ verificationId });
+  
+  return {
+    ...submitResult,
+    verificationId,
+    encryptedSecret: passwordVerificationResponse.encryptedSecret,
+  };
 };
 
 export const registerWithUsername = async (username: string, captchaToken?: string) => {
@@ -85,7 +97,11 @@ export const registerWithUsername = async (username: string, captchaToken?: stri
 };
 
 export const continueRegisterWithPassword = async (password: string) => {
-  await updateProfile({ type: 'password', value: password });
+  // Split the password for zero-knowledge encryption
+  const { serverPassword } = await splitPassword(password);
+  
+  // Send only the server portion to the API
+  await updateProfile({ type: 'password', value: serverPassword });
 
   return identifyAndSubmitInteraction();
 };

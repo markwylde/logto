@@ -30,7 +30,7 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
   } = queries;
 
   const {
-    users: { checkIdentifierCollision },
+    users: { checkIdentifierCollision, verifyUserPassword },
   } = libraries;
 
   router.use(koaAccountCenter(queries));
@@ -170,6 +170,80 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
       const updatedUser = await updateUserById(userId, {
         passwordEncrypted,
         passwordEncryptionMethod,
+      });
+
+      ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
+
+      ctx.status = 204;
+
+      return next();
+    }
+  );
+
+  // Get user profile with encrypted secret for password change
+  router.get(
+    `${accountApiPrefix}/password/profile`,
+    koaGuard({
+      status: [200],
+      response: z.object({
+        hasPassword: z.boolean(),
+        encryptedSecret: z.string().nullable(),
+      }),
+    }),
+    async (ctx, next) => {
+      const { id: userId } = ctx.auth;
+      const user = await findUserById(userId);
+
+      ctx.body = {
+        hasPassword: Boolean(user.passwordEncrypted),
+        encryptedSecret: user.encryptedSecret,
+      };
+
+      return next();
+    }
+  );
+
+  // Change password with zero-knowledge encryption support
+  router.put(
+    `${accountApiPrefix}/password`,
+    koaGuard({
+      body: z.object({
+        oldPassword: z.string(),
+        newPassword: z.string(),
+        encryptedSecret: z.string().optional(),
+      }),
+      status: [204, 400, 401, 403, 422],
+    }),
+    async (ctx, next) => {
+      const { id: userId } = ctx.auth;
+      const { oldPassword, newPassword, encryptedSecret } = ctx.guard.body;
+      const { fields } = ctx.accountCenter;
+
+      assertThat(
+        fields.password === AccountCenterControlValue.Edit,
+        'account_center.field_not_editable'
+      );
+
+      const user = await findUserById(userId);
+
+      // Both oldPassword and newPassword are already server portions (pre-split by client)
+
+      // Verify the old password is correct
+      await verifyUserPassword(user, oldPassword);
+
+      // Password validation against policy must be done on the client side since we only receive
+      // the server portion of the password here. The client validates the full password
+      // before splitting and sending only the server portion.
+
+      // Encrypt the new server password
+      const { passwordEncrypted, passwordEncryptionMethod } =
+        await encryptUserPassword(newPassword);
+
+      // Update user with new password and optionally new encrypted secret
+      const updatedUser = await updateUserById(userId, {
+        passwordEncrypted,
+        passwordEncryptionMethod,
+        ...(encryptedSecret && { encryptedSecret }),
       });
 
       ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
