@@ -27,25 +27,29 @@ void initI18n();
 // Set up fetch interceptor globally before anything else
 (() => {
   const originalFetch = window.fetch;
-  window.fetch = async (...args) => {
+  const interceptedFetch = async (...args: Parameters<typeof fetch>) => {
     const response = await originalFetch(...args);
 
     const [url] = args;
     if (typeof url === 'string' && url.includes('/oidc/token')) {
       try {
         const clonedResponse = response.clone();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data = await clonedResponse.json();
 
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         if (data.encrypted_client_secret) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
           sessionStorage.setItem('logto_encrypted_client_secret', data.encrypted_client_secret);
         }
-      } catch (error) {
+      } catch {
         // Silently ignore parsing errors
       }
     }
 
     return response;
   };
+  window.fetch = interceptedFetch;
 })();
 
 const Main = () => {
@@ -124,11 +128,13 @@ const Main = () => {
 
     // Retrieve and decrypt the zero-knowledge secret after authentication
     if (isAuthenticated && !decryptedSecret) {
-      void retrieveAndDecryptSecret(getAccessToken, getEncryptedClientSecret).then((secret) => {
+      const retrieveSecret = async () => {
+        const secret = await retrieveAndDecryptSecret(getAccessToken, getEncryptedClientSecret);
         if (secret) {
           setDecryptedSecret(secret);
         }
-      });
+      };
+      void retrieveSecret();
     }
 
     // Initialize key pair and add public key to extra params
@@ -343,7 +349,7 @@ const Main = () => {
               </pre>
             </div>
           )}
-          {!decryptedSecret && isAuthenticated && (
+          {!decryptedSecret && (
             <div style={{ textAlign: 'left', marginBottom: '15px' }}>
               <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Zero-Knowledge Secret:</div>
               <div style={{ fontSize: '0.9em', color: '#666', fontStyle: 'italic' }}>
@@ -439,8 +445,8 @@ const Main = () => {
                     resize: 'none',
                     boxSizing: 'border-box',
                   }}
-                  onChange={(e) => {
-                    setInputText(e.target.value);
+                  onChange={(event) => {
+                    setInputText(event.target.value);
                   }}
                 />
               </div>
@@ -574,7 +580,7 @@ const App = () => {
       config={{
         endpoint: 'http://localhost:3001',
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- We need to fall back for empty string
-        appId: params.get('app_id') || config.appId || '2ztj7wn5t1nvrqpb2ehyn',
+        appId: params.get('app_id') || config.appId || '91zok5zm229p3ouzjin1q',
         // eslint-disable-next-line no-restricted-syntax
         prompt: config.prompt ? (config.prompt.split(' ') as Prompt[]) : [],
         scopes: config.scope ? config.scope.split(' ') : [],
