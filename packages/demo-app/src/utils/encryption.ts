@@ -122,11 +122,8 @@ export async function retrieveAndDecryptSecret(
   try {
     isRetrieving = true;
 
-    // First check if we already have a decrypted secret
-    const cachedSecret = localStorage.getItem(STORAGE_KEYS.DECRYPTED_SECRET);
-    if (cachedSecret) {
-      return cachedSecret;
-    }
+    // Clear any cached secret first to ensure we get a fresh one on each login
+    localStorage.removeItem(STORAGE_KEYS.DECRYPTED_SECRET);
 
     const privateKey = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
     const publicKey = localStorage.getItem(STORAGE_KEYS.PUBLIC_KEY);
