@@ -67,10 +67,6 @@ const ChangePassword = () => {
       }
       
       // Change password
-        oldPassword: '***' + oldServerPassword.slice(-4),
-        newPassword: '***' + newServerPassword.slice(-4),
-        hasEncryptedSecret: !!newEncryptedSecret
-      });
       
       const changeResponse = await fetch('http://localhost:3001/api/my-account/password', {
         method: 'PUT',
