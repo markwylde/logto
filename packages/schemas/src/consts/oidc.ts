@@ -62,6 +62,11 @@ export enum ExtraParamsKey {
    * The one-time token used as a proof for the user's identity. Example use case: Magic link.
    */
   OneTimeToken = 'one_time_token',
+  /**
+   * The public key used for zero-knowledge encryption. The app provides this key to encrypt
+   * secrets that only the app can decrypt.
+   */
+  PublicKey = 'public_key',
 }
 
 /** @deprecated Use {@link FirstScreen} instead. */
@@ -90,6 +95,7 @@ export const extraParamsObjectGuard = z
     [ExtraParamsKey.LoginHint]: z.string(),
     [ExtraParamsKey.Identifier]: z.string(),
     [ExtraParamsKey.OneTimeToken]: z.string(),
+    [ExtraParamsKey.PublicKey]: z.string(),
   })
   .partial() satisfies ToZodObject<ExtraParamsObject>;
 
@@ -101,4 +107,5 @@ export type ExtraParamsObject = Partial<{
   [ExtraParamsKey.LoginHint]: string;
   [ExtraParamsKey.Identifier]: string;
   [ExtraParamsKey.OneTimeToken]: string;
+  [ExtraParamsKey.PublicKey]: string;
 }>;

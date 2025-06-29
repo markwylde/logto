@@ -17,6 +17,7 @@ import assertThat from '#src/utils/assert-that.js';
 
 import { parseLegacyPassword } from '../../utils/password.js';
 import { transpileUserProfileResponse } from '../../utils/user.js';
+import { splitPassword } from '../../utils/zero-knowledge-password.js';
 import type { ManagementApiRouter, RouterInitArgs } from '../types.js';
 
 export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
@@ -201,6 +202,18 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       const id = await generateUserId();
 
+      // Handle password encryption with zero-knowledge split
+      let passwordData = {};
+      if (password) {
+        const { serverPassword } = await splitPassword(password);
+        passwordData = await encryptUserPassword(serverPassword);
+      } else if (passwordDigest) {
+        passwordData = {
+          passwordEncrypted: passwordDigest,
+          passwordEncryptionMethod: passwordAlgorithm,
+        };
+      }
+
       const [user] = await insertUser(
         {
           id,
@@ -210,13 +223,7 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
           name,
           avatar,
           ...conditional(customData && { customData }),
-          ...conditional(password && (await encryptUserPassword(password))),
-          ...conditional(
-            passwordDigest && {
-              passwordEncrypted: passwordDigest,
-              passwordEncryptionMethod: passwordAlgorithm,
-            }
-          ),
+          ...passwordData,
           ...conditional(profile && { profile }),
         },
         []
@@ -275,7 +282,11 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       await findUserById(userId);
 
-      const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
+      // Split the password for zero-knowledge encryption
+      const { serverPassword } = await splitPassword(password);
+      
+      // Encrypt the server password portion
+      const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(serverPassword);
 
       const user = await updateUserById(userId, {
         passwordEncrypted,
@@ -302,7 +313,11 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
       } = ctx.guard;
 
       const user = await findUserById(userId);
-      await verifyUserPassword(user, password);
+      
+      // Split the password for zero-knowledge encryption
+      const { serverPassword } = await splitPassword(password);
+      
+      await verifyUserPassword(user, serverPassword);
 
       ctx.status = 204;
 
