@@ -6,6 +6,7 @@
 import { useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { storeUserEncryptedSecret, storeSessionEncryptedSecret } from '@/utils/zero-knowledge-api';
 import {
   splitPassword,
   generateSecret,
@@ -14,23 +15,19 @@ import {
   encryptWithPublicKey,
   deriveAppSecret,
 } from '@/utils/zero-knowledge-encryption';
-import {
-  storeUserEncryptedSecret,
-  storeSessionEncryptedSecret,
-} from '@/utils/zero-knowledge-api';
 
 export type PasswordInterceptorResult = {
   processPassword: (password: string) => Promise<string>;
   handleSecretManagement: (
     verificationId: string,
-    encryptedSecret: string | null
+    encryptedSecret: string | undefined
   ) => Promise<void>;
 };
 
 const usePasswordInterceptor = (): PasswordInterceptorResult => {
   const [searchParams] = useSearchParams();
-  const clientPasswordRef = useRef<string | null>(null);
-  const publicKeyRef = useRef<string | null>(searchParams.get('public_key'));
+  const clientPasswordRef = useRef<string | undefined>(null);
+  const publicKeyRef = useRef<string | undefined>(searchParams.get('public_key'));
 
   /**
    * Process the password by splitting it into server and client parts.
@@ -38,11 +35,10 @@ const usePasswordInterceptor = (): PasswordInterceptorResult => {
    */
   const processPassword = useCallback(async (password: string): Promise<string> => {
     const { serverPassword, clientPassword } = await splitPassword(password);
-    
-    
+
     // Store client password temporarily for secret encryption/decryption
     clientPasswordRef.current = clientPassword;
-    
+
     return serverPassword;
   }, []);
 
@@ -52,14 +48,12 @@ const usePasswordInterceptor = (): PasswordInterceptorResult => {
    * Then derives an app-specific secret and encrypts it with the app's public key for the session.
    */
   const handleSecretManagement = useCallback(
-    async (verificationId: string, encryptedSecret: string | null) => {
-      
+    async (verificationId: string, encryptedSecret: string | undefined) => {
       const clientPassword = clientPasswordRef.current;
       const publicKey = publicKeyRef.current;
-      
+
       // Get app ID from session storage (set during OAuth flow)
       const appId = sessionStorage.getItem('app_id');
-
 
       if (!clientPassword) {
         throw new Error('Client password not available');
@@ -77,27 +71,26 @@ const usePasswordInterceptor = (): PasswordInterceptorResult => {
 
       let baseSecret: string;
 
-      if (!encryptedSecret) {
-        // First login - generate and store new secret
-        baseSecret = generateSecret();
-        const newEncryptedSecret = await encryptWithPassword(baseSecret, clientPassword);
-        await storeUserEncryptedSecret(newEncryptedSecret);
-      } else {
+      if (encryptedSecret) {
         // Subsequent login - decrypt existing secret
         try {
           baseSecret = await decryptWithPassword(encryptedSecret, clientPassword);
-        } catch (error) {
+        } catch {
           // Failed to decrypt - likely password was reset by admin
           // Generate new secret and re-encrypt with current password
           baseSecret = generateSecret();
           const newEncryptedSecret = await encryptWithPassword(baseSecret, clientPassword);
           await storeUserEncryptedSecret(newEncryptedSecret);
         }
+      } else {
+        // First login - generate and store new secret
+        baseSecret = generateSecret();
+        const newEncryptedSecret = await encryptWithPassword(baseSecret, clientPassword);
+        await storeUserEncryptedSecret(newEncryptedSecret);
       }
 
       // Derive app-specific secret from base secret
       const appSpecificSecret = await deriveAppSecret(baseSecret, appId);
-
       // Encrypt app-specific secret with app's public key for this session
       const encryptedClientSecret = await encryptWithPublicKey(appSpecificSecret, publicKey);
       await storeSessionEncryptedSecret(encryptedClientSecret);

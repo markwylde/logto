@@ -6,6 +6,7 @@ import {
 } from '@logto/schemas';
 
 import { type ContinueFlowInteractionEvent } from '@/types';
+import { splitPassword } from '@/utils/zero-knowledge-encryption';
 
 import api from '../api';
 
@@ -96,7 +97,11 @@ export const registerWithUsername = async (username: string, captchaToken?: stri
 };
 
 export const continueRegisterWithPassword = async (password: string) => {
-  await updateProfile({ type: 'password', value: password });
+  // Split the password for zero-knowledge encryption
+  const { serverPassword } = await splitPassword(password);
+  
+  // Send only the server portion to the API
+  await updateProfile({ type: 'password', value: serverPassword });
 
   return identifyAndSubmitInteraction();
 };

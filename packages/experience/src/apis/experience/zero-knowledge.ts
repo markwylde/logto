@@ -32,10 +32,6 @@ export const signInWithPasswordAndManageSecret = async (
   await initInteraction(InteractionEvent.SignIn, captchaToken);
 
   // Step 2: Verify the password
-    identifier: payload.identifier,
-    password: '***' + payload.password.slice(-4),
-    passwordLength: payload.password.length
-  });
   
   const passwordVerificationResponse = await api
     .post(`${experienceApiRoutes.verification}/password`, {
@@ -44,9 +40,6 @@ export const signInWithPasswordAndManageSecret = async (
     .json<PasswordVerificationResponse>();
 
   const { verificationId, encryptedSecret } = passwordVerificationResponse;
-    verificationId, 
-    encryptedSecret: encryptedSecret ? 'Present' : 'Null' 
-  });
 
   // Step 3: Identify the user
   await identifyUser({ verificationId });
@@ -58,7 +51,6 @@ export const signInWithPasswordAndManageSecret = async (
     } catch (error) {
       // Continue with the flow even if secret management fails
     }
-  } else {
   }
 
   // Step 5: Submit the interaction
