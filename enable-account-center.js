@@ -23,8 +23,8 @@ async function enableAccountCenter() {
         resource: 'https://default.logto.app/api',
         scope: 'all',
         // These are the default Management API credentials for local development
-        client_id: 'zg5RaBvW9aFeEBhN5CrIw',
-        client_secret: 'D8WLxPdgFxlr8kEWNaL7N7NJIwQqWIQa',
+        client_id: 'mxkxwudv6oasdhfpgr8mq',
+        client_secret: 'tv4TqepmGeO8Xp4fFTsZ3UsgwBZNRG4j',
       }),
     });
 
