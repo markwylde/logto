@@ -3,12 +3,10 @@
  * for authorization_code grant types.
  */
 
-import type { MiddlewareType } from 'koa';
-import type { ParameterizedContext } from 'koa';
+import type { MiddlewareType, ParameterizedContext } from 'koa';
 import type { Provider } from 'oidc-provider';
 
 import type Queries from '#src/tenants/Queries.js';
-import { EnvSet } from '#src/env-set/index.js';
 import { encryptedSecretStore } from '#src/utils/encrypted-secret-store.js';
 
 const getUserIdFromToken = (idToken: unknown): string | undefined => {
@@ -23,10 +21,10 @@ const getUserIdFromToken = (idToken: unknown): string | undefined => {
     if (!payload) {
       return undefined;
     }
-    
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString());
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return decodedPayload.sub;
   } catch {
     return undefined;
@@ -47,7 +45,7 @@ const shouldProcessResponse = (ctx: ParameterizedContext): boolean => {
   }
 
   // Only process successful responses with an ID token
-  return ctx.status === 200 && ctx.body && typeof ctx.body === 'object';
+  return ctx.status === 200 && Boolean(ctx.body) && typeof ctx.body === 'object';
 };
 
 export default function koaEncryptedSecretInterceptor(
@@ -62,12 +60,17 @@ export default function koaEncryptedSecretInterceptor(
       return;
     }
 
-    const body = ctx.body;
-    if (typeof body !== 'object' || !body) {
+    if (typeof ctx.body !== 'object' || !ctx.body) {
       return;
     }
-    
-    const userId = getUserIdFromToken((body as Record<string, unknown>).id_token);
+
+    const { body } = ctx;
+
+    if (!('id_token' in body)) {
+      return;
+    }
+
+    const userId = getUserIdFromToken(body.id_token);
 
     if (!userId) {
       return;
@@ -76,7 +79,7 @@ export default function koaEncryptedSecretInterceptor(
     try {
       // Retrieve the encrypted client secret from the in-memory store
       const encryptedClientSecret = encryptedSecretStore.get(userId);
-      
+
       if (!encryptedClientSecret) {
         return;
       }
@@ -86,7 +89,7 @@ export default function koaEncryptedSecretInterceptor(
         ...ctx.body,
         encrypted_client_secret: encryptedClientSecret,
       };
-      
+
       // Clean up the entry from the store after successful retrieval
       encryptedSecretStore.delete(userId);
     } catch {

@@ -7,7 +7,6 @@ import RequestError from '#src/errors/RequestError/index.js';
 import { encryptUserPassword } from '#src/libraries/user.utils.js';
 import koaGuard from '#src/middleware/koa-guard.js';
 import assertThat from '#src/utils/assert-that.js';
-import { splitPassword } from '#src/utils/zero-knowledge-password.js';
 
 import type { RouterInitArgs } from '../routes/types.js';
 import { checkPasswordPolicyForUser } from '../utils/password.js';
@@ -120,7 +119,7 @@ export default function userRoutes<T extends AuthedMeRouter>(
     async (ctx, next) => {
       const { id: userId } = ctx.auth;
       const user = await findUserById(userId);
-      
+
       ctx.body = {
         hasPassword: Boolean(user.passwordEncrypted),
         encryptedSecret: user.encryptedSecret ?? null,
@@ -142,10 +141,8 @@ export default function userRoutes<T extends AuthedMeRouter>(
       const user = await findUserById(userId);
       assertThat(!user.isSuspended, new RequestError({ code: 'user.suspended', status: 401 }));
 
-      // Split the password for zero-knowledge encryption
-      const { serverPassword } = await splitPassword(password);
-      
-      await verifyUserPassword(user, serverPassword);
+      // Password received here is already the server portion (pre-split by client)
+      await verifyUserPassword(user, password);
       await createVerificationStatus(userId, null);
 
       ctx.status = 204;
@@ -156,12 +153,12 @@ export default function userRoutes<T extends AuthedMeRouter>(
 
   router.post(
     '/password',
-    koaGuard({ 
-      body: object({ 
+    koaGuard({
+      body: object({
         password: string().min(1),
-        encryptedSecret: string().optional()
-      }), 
-      status: [204, 400, 401] 
+        encryptedSecret: string().optional(),
+      }),
+      status: [204, 400, 401],
     }),
     async (ctx, next) => {
       const { id: userId } = ctx.auth;
@@ -182,15 +179,12 @@ export default function userRoutes<T extends AuthedMeRouter>(
         throw new RequestError('password.rejected', { issues });
       }
 
-      // Split the password for zero-knowledge encryption
-      const { serverPassword } = await splitPassword(password);
+      // Password received here is already the server portion (pre-split by client)
+      const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
 
-      // Encrypt the server password portion
-      const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(serverPassword);
-      
       // Update user with new password and optionally new encrypted secret
-      await updateUserById(userId, { 
-        passwordEncrypted, 
+      await updateUserById(userId, {
+        passwordEncrypted,
         passwordEncryptionMethod,
         ...(encryptedSecret && { encryptedSecret }),
       });
