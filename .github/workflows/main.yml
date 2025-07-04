@@ -135,6 +135,7 @@ jobs:
         with:
           ref: ${{ steps.version.outputs.current }}
           path: ./alteration
+        if: steps.version.outputs.current != ''
       # ** End **
 
       - name: Copy lockfile # Make setup workflow happy
@@ -155,6 +156,7 @@ jobs:
       - name: Prepack alteration
         working-directory: ./alteration
         run: pnpm i && pnpm prepack
+        if: steps.version.outputs.current != ''
       # ** End **
 
       - name: Setup Postgres
@@ -174,6 +176,7 @@ jobs:
           pnpm start db seed --test
         env:
           DB_URL: postgres://postgres:postgres@localhost:5432/alteration
+        if: steps.version.outputs.current != ''
 
       - name: Run alteration scripts
         working-directory: ./fresh
@@ -181,10 +184,12 @@ jobs:
         env:
           ALTERATION_TEST: true
           DB_URL: postgres://postgres:postgres@localhost:5432/alteration
+        if: steps.version.outputs.current != ''
 
       - name: Compare databases
         working-directory: ./fresh
         run: node .scripts/compare-database.js fresh alteration
+        if: steps.version.outputs.current != ''
       # ** End **
 
       # ** Setup old databases and compare (test `down`) **
@@ -195,6 +200,7 @@ jobs:
           pnpm start db seed --test
         env:
           DB_URL: postgres://postgres:postgres@localhost:5432/old
+        if: steps.version.outputs.current != ''
 
       - name: Revert fresh database to old
         working-directory: ./fresh
