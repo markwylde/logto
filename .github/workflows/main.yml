@@ -202,10 +202,12 @@ jobs:
         env:
           ALTERATION_TEST: true
           DB_URL: postgres://postgres:postgres@localhost:5432/fresh
+        if: steps.version.outputs.current != ''
 
       - name: Compare manifests
         working-directory: ./fresh
         run: node .scripts/compare-database.js fresh old
+        if: steps.version.outputs.current != ''
       # ** End **
 
       - name: Check alteration sequence
