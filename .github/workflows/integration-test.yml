@@ -3,7 +3,7 @@ name: Integration Test
 on:
   push:
     branches:
-      - master
+      - zero-knowledge-secret
   pull_request:
 
 concurrency:
