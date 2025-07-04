@@ -83,6 +83,7 @@ export default function koaEncryptedSecretInterceptor(
 
       encryptedSecretStore.delete(userId);
     } catch {
+      // Ignore errors when retrieving encrypted secret
     }
   };
 }

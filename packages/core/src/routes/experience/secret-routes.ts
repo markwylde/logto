@@ -1,6 +1,5 @@
 import type Router from 'koa-router';
 import { z } from 'zod';
-import { sql } from '@silverhand/slonik';
 
 import koaGuard from '#src/middleware/koa-guard.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
@@ -28,7 +27,7 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
 
       // Get the user ID from the current interaction
       const userId = experienceInteraction.identifiedUserId;
-      
+
       if (!userId) {
         ctx.status = 401;
         return next();
@@ -60,7 +59,7 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
       // Store the encrypted client secret in the experience interaction
       // It will be persisted to the OIDC session when the interaction is submitted
       experienceInteraction.setEncryptedClientSecret(encryptedClientSecret);
-      
+
       // Save the interaction to persist the encrypted client secret
       await experienceInteraction.save();
 
@@ -80,7 +79,7 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
     }),
     async (ctx, next) => {
       const { experienceInteraction } = ctx;
-      
+
       // Get the encrypted client secret from the interaction
       const encryptedClientSecret = experienceInteraction.getEncryptedClientSecret();
 
@@ -91,5 +90,4 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
       return next();
     }
   );
-
 }

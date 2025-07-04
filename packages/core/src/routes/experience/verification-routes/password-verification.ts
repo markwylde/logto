@@ -66,9 +66,9 @@ export default function passwordVerificationRoutes<T extends ExperienceInteracti
 
       // Get the user's encrypted secret if it exists
       const user = await passwordVerification.identifyUser();
-      const encryptedSecret = user.encryptedSecret;
+      const { encryptedSecret } = user;
 
-      ctx.body = { 
+      ctx.body = {
         verificationId: passwordVerification.id,
         encryptedSecret,
       };
