@@ -6,7 +6,6 @@ import RequestError from '#src/errors/RequestError/index.js';
 import { type LogEntry } from '#src/middleware/koa-audit-log.js';
 import type TenantContext from '#src/tenants/TenantContext.js';
 import assertThat from '#src/utils/assert-that.js';
-import { encryptedSecretStore } from '#src/utils/encrypted-secret-store.js';
 
 import {
   interactionStorageGuard,
@@ -536,23 +535,6 @@ export default class ExperienceInteraction {
       login: { accountId: user.id },
     });
 
-    // Save interaction data to session extension for JWT customization
-    const interactionDetails = await provider.interactionDetails(this.ctx.req, this.ctx.res);
-    if (interactionDetails.session?.uid) {
-      const jwtCustomizerContext = this.getJwtCustomizerInteractionContext();
-      // Insert with upsert behavior (onConflict will update if record exists)
-      await queries.oidcSessionExtensions.insert({
-        sessionUid: interactionDetails.session.uid,
-        accountId: user.id,
-        lastSubmission: jwtCustomizerContext,
-      });
-    }
-
-    // Store the encrypted client secret in our temporary store for retrieval during token exchange
-    if (this.encryptedClientSecret && user.id) {
-      encryptedSecretStore.set(user.id, this.encryptedClientSecret);
-    }
-
     this.ctx.body = { redirectTo };
 
     this.ctx.assignInteractionHookResult({ userId: user.id });
@@ -597,34 +579,6 @@ export default class ExperienceInteraction {
    */
   public getEncryptedClientSecret() {
     return this.encryptedClientSecret;
-  }
-
-  /**
-   * Convert the current interaction to JWT customizer interaction context format
-   * for use in JWT customization.
-   */
-  public getJwtCustomizerInteractionContext() {
-    return {
-      interactionEvent: this.interactionEvent,
-      userId: this.userId ?? '',
-      verificationRecords: this.verificationRecordsArray.map((record) => {
-        const baseRecord = {
-          id: record.id,
-          type: record.type,
-          verified: record.isVerified,
-        };
-
-        // Only include identifier for records that have one
-        if ('identifier' in record) {
-          return {
-            ...baseRecord,
-            identifier: record.identifier,
-          };
-        }
-
-        return baseRecord;
-      }),
-    };
   }
 
   private get verificationRecordsArray() {
