@@ -3,6 +3,8 @@
  * These utilities handle key pair generation and secret decryption.
  */
 
+import { toUint8Array, fromUint8Array } from 'js-base64';
+
 /**
  * Generate an RSA key pair for asymmetric encryption.
  */
@@ -41,7 +43,7 @@ export async function decryptWithPrivateKey(
   const decoder = new TextDecoder();
 
   // Decode from base64
-  const encrypted = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
+  const encrypted = toUint8Array(encryptedData);
 
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
@@ -75,24 +77,27 @@ export const STORAGE_KEYS = {
  * Returns the public key that should be passed to the sign-in page.
  */
 export async function initializeKeyPair(): Promise<string> {
-  let publicKey = localStorage.getItem(STORAGE_KEYS.PUBLIC_KEY);
-  let privateKey = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
+  const existingPublicKey = localStorage.getItem(STORAGE_KEYS.PUBLIC_KEY);
+  const existingPrivateKey = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
 
-  if (!publicKey || !privateKey) {
+  if (!existingPublicKey || !existingPrivateKey) {
     const keyPair = await generateKeyPair();
-    publicKey = keyPair.publicKey;
-    privateKey = keyPair.privateKey;
+    const { publicKey, privateKey } = keyPair;
 
     localStorage.setItem(STORAGE_KEYS.PUBLIC_KEY, publicKey);
     localStorage.setItem(STORAGE_KEYS.PRIVATE_KEY, privateKey);
+    
+    return publicKey;
   }
 
-  return publicKey;
+  return existingPublicKey;
 }
 
 // Track if we're already fetching to prevent concurrent requests
-let isRetrieving = false;
-let lastRetrievalError: number | undefined = null;
+const retrievalState = {
+  isRetrieving: false,
+  lastRetrievalError: undefined as number | undefined,
+};
 const ERROR_BACKOFF_MS = 30_000; // 30 seconds
 
 /**
@@ -106,17 +111,17 @@ export async function retrieveAndDecryptSecret(
   getEncryptedClientSecret?: () => string | undefined
 ): Promise<string | undefined> {
   // Prevent concurrent requests
-  if (isRetrieving) {
+  if (retrievalState.isRetrieving) {
     return null;
   }
 
   // If we had an error recently, don't retry yet
-  if (lastRetrievalError && Date.now() - lastRetrievalError < ERROR_BACKOFF_MS) {
+  if (retrievalState.lastRetrievalError && Date.now() - retrievalState.lastRetrievalError < ERROR_BACKOFF_MS) {
     return null;
   }
 
   try {
-    isRetrieving = true;
+    retrievalState.isRetrieving = true;
 
     // Clear any cached secret first to ensure we get a fresh one on each login
     localStorage.removeItem(STORAGE_KEYS.DECRYPTED_SECRET);
@@ -124,21 +129,15 @@ export async function retrieveAndDecryptSecret(
     const privateKey = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
     const publicKey = localStorage.getItem(STORAGE_KEYS.PUBLIC_KEY);
     if (!privateKey || !publicKey) {
-      lastRetrievalError = Date.now();
+      retrievalState.lastRetrievalError = Date.now();
       return null;
     }
 
     // Get the encrypted client secret from the token response
-    let encryptedClientSecret: string | undefined = null;
-
-    if (getEncryptedClientSecret) {
-      encryptedClientSecret = getEncryptedClientSecret();
-      if (encryptedClientSecret) {
-      }
-    }
+    const encryptedClientSecret = getEncryptedClientSecret?.();
 
     if (!encryptedClientSecret) {
-      lastRetrievalError = Date.now();
+      retrievalState.lastRetrievalError = Date.now();
       return null;
     }
 
@@ -150,10 +149,10 @@ export async function retrieveAndDecryptSecret(
 
     return decryptedSecret;
   } catch {
-    lastRetrievalError = Date.now();
+    retrievalState.lastRetrievalError = Date.now();
     return null;
   } finally {
-    isRetrieving = false;
+    retrievalState.isRetrieving = false;
   }
 }
 
@@ -212,7 +211,7 @@ export async function encryptText(text: string, secret: string): Promise<string>
   combined.set(new Uint8Array(encrypted), salt.length + iv.length);
 
   // Return as base64
-  return btoa(String.fromCodePoint(...combined));
+  return fromUint8Array(combined, true);
 }
 
 /**
@@ -224,7 +223,7 @@ export async function decryptText(encryptedText: string, secret: string): Promis
 
   try {
     // Decode from base64
-    const combined = Uint8Array.from(atob(encryptedText), (char) => char.codePointAt(0)!);
+    const combined = toUint8Array(encryptedText);
 
     // Extract salt, iv, and encrypted data
     const salt = combined.slice(0, 16);

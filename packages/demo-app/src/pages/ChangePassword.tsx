@@ -8,6 +8,16 @@ import { splitPassword } from '../utils/zero-knowledge-password';
 
 import styles from './ChangePassword.module.scss';
 
+// Type guard utility functions
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const hasStringProperty = (
+  object: Record<string, unknown>,
+  key: string
+): object is Record<string, unknown> & Record<typeof key, string> =>
+  key in object && typeof object[key] === 'string';
+
 const ChangePassword = () => {
   const { getAccessToken } = useLogto();
   const { t } = useTranslation();
@@ -20,8 +30,8 @@ const ChangePassword = () => {
   );
 
   const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
+    async (event: React.FormEvent) => {
+      event.preventDefault();
 
       // Clear previous messages
       setMessage(null);
@@ -61,19 +71,26 @@ const ChangePassword = () => {
           throw new Error('Failed to fetch profile');
         }
 
-        const { encryptedSecret } = await profileResponse.json();
+        const profileData: unknown = await profileResponse.json();
+        const encryptedSecret =
+          isObject(profileData) && hasStringProperty(profileData, 'encryptedSecret')
+            ? profileData.encryptedSecret
+            : undefined;
 
-        let newEncryptedSecret;
-        if (encryptedSecret) {
-          // Decrypt and re-encrypt the secret
-          try {
-            const decryptedSecret = await decryptWithPassword(encryptedSecret, oldClientPassword);
-            newEncryptedSecret = await encryptWithPassword(decryptedSecret, newClientPassword);
-          } catch {
-            throw new Error('Incorrect current password');
+        const getNewEncryptedSecret = async (): Promise<string | undefined> => {
+          if (encryptedSecret) {
+            // Decrypt and re-encrypt the secret
+            try {
+              const decryptedSecret = await decryptWithPassword(encryptedSecret, oldClientPassword);
+              return await encryptWithPassword(decryptedSecret, newClientPassword);
+            } catch {
+              throw new Error('Incorrect current password');
+            }
           }
-        } else {
-        }
+          return undefined;
+        };
+
+        const newEncryptedSecret = await getNewEncryptedSecret();
 
         // Change password
 
@@ -91,8 +108,12 @@ const ChangePassword = () => {
         });
 
         if (!changeResponse.ok) {
-          const error = await changeResponse.json();
-          throw new Error(error.message || 'Failed to change password');
+          const errorData: unknown = await changeResponse.json();
+          const errorMessage =
+            isObject(errorData) && hasStringProperty(errorData, 'message')
+              ? errorData.message
+              : undefined;
+          throw new Error(errorMessage ?? 'Failed to change password');
         }
 
         setMessage({ type: 'success', text: 'Password changed successfully!' });
@@ -137,8 +158,8 @@ const ChangePassword = () => {
             id="oldPassword"
             value={oldPassword}
             disabled={loading}
-            onChange={(e) => {
-              setOldPassword(e.target.value);
+            onChange={(event) => {
+              setOldPassword(event.target.value);
             }}
           />
         </div>
@@ -151,8 +172,8 @@ const ChangePassword = () => {
             id="newPassword"
             value={newPassword}
             disabled={loading}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
+            onChange={(event) => {
+              setNewPassword(event.target.value);
             }}
           />
         </div>
@@ -165,8 +186,8 @@ const ChangePassword = () => {
             id="confirmPassword"
             value={confirmPassword}
             disabled={loading}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
             }}
           />
         </div>
