@@ -56,11 +56,7 @@ export async function decryptWithPrivateKey(
   );
 
   // Decrypt the data
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'RSA-OAEP' },
-    privateKey,
-    encrypted
-  );
+  const decrypted = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privateKey, encrypted);
 
   return decoder.decode(decrypted);
 }
@@ -86,7 +82,7 @@ export async function initializeKeyPair(): Promise<string> {
     const keyPair = await generateKeyPair();
     publicKey = keyPair.publicKey;
     privateKey = keyPair.privateKey;
-    
+
     localStorage.setItem(STORAGE_KEYS.PUBLIC_KEY, publicKey);
     localStorage.setItem(STORAGE_KEYS.PRIVATE_KEY, privateKey);
   }
@@ -96,8 +92,8 @@ export async function initializeKeyPair(): Promise<string> {
 
 // Track if we're already fetching to prevent concurrent requests
 let isRetrieving = false;
-let lastRetrievalError: number | null = null;
-const ERROR_BACKOFF_MS = 30000; // 30 seconds
+let lastRetrievalError: number | undefined = null;
+const ERROR_BACKOFF_MS = 30_000; // 30 seconds
 
 /**
  * Retrieve and decrypt the app-specific secret from the user's account.
@@ -107,8 +103,8 @@ const ERROR_BACKOFF_MS = 30000; // 30 seconds
  */
 export async function retrieveAndDecryptSecret(
   getAccessToken: () => Promise<string | undefined>,
-  getEncryptedClientSecret?: () => string | null
-): Promise<string | null> {
+  getEncryptedClientSecret?: () => string | undefined
+): Promise<string | undefined> {
   // Prevent concurrent requests
   if (isRetrieving) {
     return null;
@@ -133,8 +129,8 @@ export async function retrieveAndDecryptSecret(
     }
 
     // Get the encrypted client secret from the token response
-    let encryptedClientSecret: string | null = null;
-    
+    let encryptedClientSecret: string | undefined = null;
+
     if (getEncryptedClientSecret) {
       encryptedClientSecret = getEncryptedClientSecret();
       if (encryptedClientSecret) {
@@ -148,12 +144,12 @@ export async function retrieveAndDecryptSecret(
 
     // Decrypt the client secret with our private key
     const decryptedSecret = await decryptWithPrivateKey(encryptedClientSecret, privateKey);
-    
+
     // Cache the secret
     localStorage.setItem(STORAGE_KEYS.DECRYPTED_SECRET, decryptedSecret);
-    
+
     return decryptedSecret;
-  } catch (error) {
+  } catch {
     lastRetrievalError = Date.now();
     return null;
   } finally {
