@@ -530,11 +530,23 @@ export default class ExperienceInteraction {
       });
     }
 
-    const { provider } = this.tenant;
+    const { provider, queries } = this.tenant;
 
     const redirectTo = await provider.interactionResult(this.ctx.req, this.ctx.res, {
       login: { accountId: user.id },
     });
+
+    // Save interaction data to session extension for JWT customization
+    const interactionDetails = await provider.interactionDetails(this.ctx.req, this.ctx.res);
+    if (interactionDetails.session?.uid) {
+      const jwtCustomizerContext = this.getJwtCustomizerInteractionContext();
+      // Insert with upsert behavior (onConflict will update if record exists)
+      await queries.oidcSessionExtensions.insert({
+        sessionUid: interactionDetails.session.uid,
+        accountId: user.id,
+        lastSubmission: jwtCustomizerContext,
+      });
+    }
 
     // Store the encrypted client secret in our temporary store for retrieval during token exchange
     if (this.encryptedClientSecret && user.id) {
@@ -585,6 +597,34 @@ export default class ExperienceInteraction {
    */
   public getEncryptedClientSecret() {
     return this.encryptedClientSecret;
+  }
+
+  /**
+   * Convert the current interaction to JWT customizer interaction context format
+   * for use in JWT customization.
+   */
+  public getJwtCustomizerInteractionContext() {
+    return {
+      interactionEvent: this.interactionEvent,
+      userId: this.userId ?? '',
+      verificationRecords: this.verificationRecordsArray.map((record) => {
+        const baseRecord = {
+          id: record.id,
+          type: record.type,
+          verified: record.isVerified,
+        };
+
+        // Only include identifier for records that have one
+        if ('identifier' in record) {
+          return {
+            ...baseRecord,
+            identifier: record.identifier,
+          };
+        }
+
+        return baseRecord;
+      }),
+    };
   }
 
   private get verificationRecordsArray() {
