@@ -39,7 +39,11 @@ const shouldProcessResponse = (ctx: ParameterizedContext): boolean => {
   return ctx.status === 200 && Boolean(ctx.body) && typeof ctx.body === 'object';
 };
 
-export default function koaEncryptedSecretInterceptor(
+/**
+ * Middleware for intercepting token responses and adding encrypted client secrets.
+ * Currently unused but preserved for future zero-knowledge authentication features.
+ */
+function koaEncryptedSecretInterceptor(
   provider: Provider,
   queries: Queries,
   tenantId: string
@@ -87,3 +91,6 @@ export default function koaEncryptedSecretInterceptor(
     }
   };
 }
+
+// Export commented out to avoid unused export lint error
+// export default koaEncryptedSecretInterceptor;
