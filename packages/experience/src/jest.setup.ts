@@ -1,3 +1,6 @@
+// eslint-disable-next-line n/prefer-global/text-decoder, n/prefer-global/text-encoder
+import { TextDecoder, TextEncoder } from 'node:util';
+
 import { type LocalePhrase } from '@logto/phrases-experience';
 import { ssrPlaceholder } from '@logto/schemas';
 import { type DeepPartial } from '@silverhand/essentials';
