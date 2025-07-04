@@ -42,7 +42,7 @@ jest.mock('react-router-dom', () => ({
 jest.mock('@/hooks/use-password-interceptor', () => ({
   __esModule: true,
   default: jest.fn(() => ({
-    processPassword: jest.fn((password: string) => Promise.resolve(password)),
+    processPassword: jest.fn(async (password: string) => password),
     handleSecretManagement: jest.fn(),
   })),
 }));

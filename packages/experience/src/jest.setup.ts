@@ -24,5 +24,12 @@ void setupI18nForTesting();
 Object.defineProperty(global, 'logtoSsr', { value: ssrPlaceholder });
 
 // Add TextDecoder polyfill for Jest
-import { TextDecoder, TextEncoder } from 'util';
-Object.assign(global, { TextDecoder, TextEncoder });
+// eslint-disable-next-line @silverhand/fp/no-mutating-methods
+Object.defineProperty(global, 'TextDecoder', {
+  value: TextDecoder,
+});
+
+// eslint-disable-next-line @silverhand/fp/no-mutating-methods
+Object.defineProperty(global, 'TextEncoder', {
+  value: TextEncoder,
+});
