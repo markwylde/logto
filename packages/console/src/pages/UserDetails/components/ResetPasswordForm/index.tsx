@@ -24,16 +24,13 @@ function ResetPasswordForm({ onClose, userId, hasPassword }: Props) {
     const fullPassword = generateRandomPassword();
     setIsLoading(true);
 
-    // Split password for zero-knowledge encryption
     const { serverPassword } = await splitPassword(fullPassword);
 
-    // Send only the server portion to the API
     await api
       .patch(`api/users/${userId}/password`, { json: { password: serverPassword } })
       .json<User>();
     setIsLoading(false);
 
-    // Return the full password to show to the admin
     onClose?.(fullPassword);
   };
 

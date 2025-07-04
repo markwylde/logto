@@ -201,10 +201,8 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       const id = await generateUserId();
 
-      // Handle password encryption
       const passwordData = await (async () => {
         if (password) {
-          // Password received here is already the server portion (pre-split by client)
           return encryptUserPassword(password);
         }
 
@@ -286,7 +284,6 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       await findUserById(userId);
 
-      // Password received here is already the server portion (pre-split by client)
       const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
 
       const user = await updateUserById(userId, {
@@ -315,7 +312,6 @@ export default function adminUserBasicsRoutes<T extends ManagementApiRouter>(
 
       const user = await findUserById(userId);
 
-      // Password received here is already the server portion (pre-split by client)
       await verifyUserPassword(user, password);
 
       ctx.status = 204;

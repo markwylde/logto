@@ -54,10 +54,8 @@ function VerifyPasswordModal() {
     clearErrors();
     void handleSubmit(async ({ password }) => {
       try {
-        // Split password for zero-knowledge encryption
         const { serverPassword } = await splitPassword(password);
 
-        // Send only the server portion to the API
         await api.post(`me/password/verify`, { json: { password: serverPassword } });
         reset();
         navigate('../change-password', { state });

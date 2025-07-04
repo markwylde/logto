@@ -80,14 +80,13 @@ function CreateForm({ onClose, onCreate }: Props) {
 
       const fullPassword = generateRandomPassword();
 
-      // Split password for zero-knowledge encryption
       const { serverPassword } = await splitPassword(fullPassword);
 
       const { primaryPhone } = data;
 
       const userData = {
         ...data,
-        password: serverPassword, // Use server portion for API
+        password: serverPassword,
         ...conditional(primaryPhone && { primaryPhone: parsePhoneNumber(primaryPhone) }),
       };
 
@@ -101,7 +100,7 @@ function CreateForm({ onClose, onCreate }: Props) {
 
         setCreatedUserInfo({
           user: createdUser,
-          password: fullPassword, // Show full password to admin
+          password: fullPassword,
         });
 
         onCreate();

@@ -310,20 +310,11 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
 
       const user = await findUserById(userId);
 
-      // Both oldPassword and newPassword are already server portions (pre-split by client)
-
-      // Verify the old password is correct
       await verifyUserPassword(user, oldPassword);
 
-      // Password validation against policy must be done on the client side since we only receive
-      // the server portion of the password here. The client validates the full password
-      // before splitting and sending only the server portion.
-
-      // Encrypt the new server password
       const { passwordEncrypted, passwordEncryptionMethod } =
         await encryptUserPassword(newPassword);
 
-      // Update user with new password and optionally new encrypted secret
       const updatedUser = await updateUserById(userId, {
         passwordEncrypted,
         passwordEncryptionMethod,

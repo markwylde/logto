@@ -141,7 +141,6 @@ export default function userRoutes<T extends AuthedMeRouter>(
       const user = await findUserById(userId);
       assertThat(!user.isSuspended, new RequestError({ code: 'user.suspended', status: 401 }));
 
-      // Password received here is already the server portion (pre-split by client)
       await verifyUserPassword(user, password);
       await createVerificationStatus(userId, null);
 
@@ -179,10 +178,8 @@ export default function userRoutes<T extends AuthedMeRouter>(
         throw new RequestError('password.rejected', { issues });
       }
 
-      // Password received here is already the server portion (pre-split by client)
       const { passwordEncrypted, passwordEncryptionMethod } = await encryptUserPassword(password);
 
-      // Update user with new password and optionally new encrypted secret
       await updateUserById(userId, {
         passwordEncrypted,
         passwordEncryptionMethod,

@@ -1,8 +1,3 @@
-/**
- * Middleware to intercept token responses and add encrypted client secrets
- * for authorization_code grant types.
- */
-
 import type { MiddlewareType, ParameterizedContext } from 'koa';
 import type { Provider } from 'oidc-provider';
 
@@ -15,8 +10,6 @@ const getUserIdFromToken = (idToken: unknown): string | undefined => {
   }
 
   try {
-    // Decode the ID token to get the sub claim (user ID)
-    // ID tokens are JWT format: header.payload.signature
     const [, payload] = idToken.split('.');
     if (!payload) {
       return undefined;
@@ -37,14 +30,12 @@ const shouldProcessResponse = (ctx: ParameterizedContext): boolean => {
     return false;
   }
 
-  // Check if this is an authorization_code grant
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const grantType = ctx.request.body?.grant_type || ctx.oidc?.params?.grant_type;
   if (grantType !== 'authorization_code') {
     return false;
   }
 
-  // Only process successful responses with an ID token
   return ctx.status === 200 && Boolean(ctx.body) && typeof ctx.body === 'object';
 };
 
@@ -90,10 +81,8 @@ export default function koaEncryptedSecretInterceptor(
         encrypted_client_secret: encryptedClientSecret,
       };
 
-      // Clean up the entry from the store after successful retrieval
       encryptedSecretStore.delete(userId);
     } catch {
-      // Don't fail the token request on error
     }
   };
 }

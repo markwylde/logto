@@ -1,18 +1,8 @@
 #!/usr/bin/env node
 
-/**
- * Script to enable Account Center in Logto
- * This enables the Account API endpoints needed for password change functionality
- */
-
 async function enableAccountCenter() {
   try {
-    // First, we need to get a Management API access token
-    // In development, we'll use the built-in Management API app
-    
     console.log('Enabling Account Center for password change functionality...');
-    
-    // Get access token for Management API
     const tokenResponse = await fetch('http://localhost:3001/oidc/token', {
       method: 'POST',
       headers: {
@@ -22,7 +12,6 @@ async function enableAccountCenter() {
         grant_type: 'client_credentials',
         resource: 'https://default.logto.app/api',
         scope: 'all',
-        // These are the default Management API credentials for local development
         client_id: 'mxkxwudv6oasdhfpgr8mq',
         client_secret: 'tv4TqepmGeO8Xp4fFTsZ3UsgwBZNRG4j',
       }),
@@ -36,7 +25,6 @@ async function enableAccountCenter() {
     const { access_token } = await tokenResponse.json();
     console.log('✓ Got Management API access token');
 
-    // Enable Account Center with necessary fields
     const patchResponse = await fetch('http://localhost:3001/api/account-center', {
       method: 'PATCH',
       headers: {
@@ -74,5 +62,4 @@ async function enableAccountCenter() {
   }
 }
 
-// Run the script
 enableAccountCenter();

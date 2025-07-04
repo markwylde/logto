@@ -62,10 +62,8 @@ function ChangePasswordModal() {
     clearErrors();
     void handleSubmit(async ({ newPassword }) => {
       try {
-        // Split password for zero-knowledge encryption
         const { serverPassword } = await splitPassword(newPassword);
 
-        // Send only the server portion to the API
         await api.post(`me/password`, { json: { password: serverPassword } });
         toast.success(t('profile.password_changed'));
         onClose();
