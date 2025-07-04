@@ -1,9 +1,6 @@
 name: Integration Test
 
 on:
-  push:
-    branches:
-      - zero-knowledge-secret
   pull_request:
 
 concurrency:

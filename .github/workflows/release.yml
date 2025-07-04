@@ -1,9 +1,7 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - zero-knowledge-secret
+  pull_request:
   workflow_dispatch:
 
 concurrency:

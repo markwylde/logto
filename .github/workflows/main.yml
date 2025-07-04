@@ -1,9 +1,6 @@
 name: Main
 
 on:
-  push:
-    branches:
-      - zero-knowledge-secret
   pull_request:
 
 concurrency:
