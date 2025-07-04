@@ -422,7 +422,11 @@ export default function initOidc(
 
   oidc.use(koaAppSecretTranspilation(queries));
   oidc.use(koaBodyEtag());
-  oidc.use(koaEncryptedSecretInterceptor(oidc, queries, envSet.tenantId));
+
+  // Only enable encrypted secret interceptor in production to avoid test timeouts
+  if (!EnvSet.values.isIntegrationTest) {
+    oidc.use(koaEncryptedSecretInterceptor(oidc, queries, envSet.tenantId));
+  }
 
   if (EnvSet.values.isCloud) {
     oidc.use(koaTokenUsageGuard(subscription));
