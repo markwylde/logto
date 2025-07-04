@@ -25,7 +25,7 @@ import {
 export const signInWithPasswordAndManageSecret = async (
   payload: PasswordVerificationPayload,
   captchaToken?: string,
-  onSecretManagement?: (verificationId: string, encryptedSecret: string | null) => Promise<void>
+  onSecretManagement?: (verificationId: string, encryptedSecret: string | undefined) => Promise<void>
 ) => {
   
   // Step 1: Initialize the interaction
@@ -47,7 +47,7 @@ export const signInWithPasswordAndManageSecret = async (
   // Step 4: Handle secret management if callback provided
   if (onSecretManagement) {
     try {
-      await onSecretManagement(verificationId, encryptedSecret ?? null);
+      await onSecretManagement(verificationId, encryptedSecret ?? undefined);
     } catch (error) {
       // Continue with the flow even if secret management fails
     }

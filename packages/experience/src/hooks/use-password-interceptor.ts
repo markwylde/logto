@@ -26,7 +26,7 @@ export type PasswordInterceptorResult = {
 
 const usePasswordInterceptor = (): PasswordInterceptorResult => {
   const [searchParams] = useSearchParams();
-  const clientPasswordRef = useRef<string | undefined>(null);
+  const clientPasswordRef = useRef<string | undefined>(undefined);
   const publicKeyRef = useRef<string | undefined>(searchParams.get('public_key'));
 
   /**
@@ -96,7 +96,7 @@ const usePasswordInterceptor = (): PasswordInterceptorResult => {
       await storeSessionEncryptedSecret(encryptedClientSecret);
 
       // Clear the client password from memory
-      clientPasswordRef.current = null;
+      clientPasswordRef.current = undefined;
     },
     []
   );
