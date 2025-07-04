@@ -26,7 +26,7 @@ const ChangePassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | undefined>(
-    null
+    undefined
   );
 
   const handleSubmit = useCallback(
@@ -34,7 +34,7 @@ const ChangePassword = () => {
       event.preventDefault();
 
       // Clear previous messages
-      setMessage(null);
+      setMessage(undefined);
 
       // Validate passwords match
       if (newPassword !== confirmPassword) {

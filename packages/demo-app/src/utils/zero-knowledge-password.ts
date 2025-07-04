@@ -1,5 +1,6 @@
 // Password splitting function for zero-knowledge encryption
 import { fromUint8Array } from 'js-base64';
+
 export async function splitPassword(
   password: string
 ): Promise<{ serverPassword: string; clientPassword: string }> {
@@ -35,8 +36,9 @@ export async function splitPassword(
     256
   );
 
-  const serverPassword = fromUint8Array(new Uint8Array(serverBits), true);
-  const clientPassword = fromUint8Array(new Uint8Array(clientBits), true);
+  const serverPassword: string = fromUint8Array(new Uint8Array(serverBits), true);
+
+  const clientPassword: string = fromUint8Array(new Uint8Array(clientBits), true);
 
   return { serverPassword, clientPassword };
 }

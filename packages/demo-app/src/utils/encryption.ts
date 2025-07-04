@@ -5,6 +5,62 @@
 
 import { toUint8Array, fromUint8Array } from 'js-base64';
 
+// Type definitions for better type safety
+type JWKWithRequiredFields = {
+  kty: string;
+  n: string;
+  e: string;
+  d: string;
+};
+
+/**
+ * Type guard to check if an object is a valid JWK
+ */
+function isValidJWK(object: unknown): object is JsonWebKey {
+  return (
+    typeof object === 'object' &&
+    object !== null &&
+    'kty' in object &&
+    'n' in object &&
+    'e' in object &&
+    'd' in object
+  );
+}
+
+/**
+ * Safely decode base64 string to Uint8Array
+ * We disable ESLint rules here as js-base64 types are not properly recognized
+ */
+function safeToUint8Array(data: string): Uint8Array {
+  try {
+    const result = toUint8Array(data);
+    // Additional validation to ensure we got the expected type
+    if (result instanceof Uint8Array) {
+      return result;
+    }
+    throw new Error('Failed to decode base64 data');
+  } catch {
+    throw new Error('Failed to decode base64 data');
+  }
+}
+
+/**
+ * Safely encode Uint8Array to base64 string
+ * We disable ESLint rules here as js-base64 types are not properly recognized
+ */
+function safeFromUint8Array(data: Uint8Array, urlSafe = false): string {
+  try {
+    const result = fromUint8Array(data, urlSafe);
+    // Additional validation to ensure we got the expected type
+    if (typeof result === 'string') {
+      return result;
+    }
+    throw new Error('Failed to encode to base64');
+  } catch {
+    throw new Error('Failed to encode to base64');
+  }
+}
+
 /**
  * Generate an RSA key pair for asymmetric encryption.
  */
@@ -43,12 +99,21 @@ export async function decryptWithPrivateKey(
   const decoder = new TextDecoder();
 
   // Decode from base64
-  const encrypted = toUint8Array(encryptedData);
+  const encrypted = safeToUint8Array(encryptedData);
 
   // Import the private key
+  const parsedJwk: unknown = JSON.parse(privateKeyJwk);
+
+  // Validate JWK structure using type guard
+  if (!isValidJWK(parsedJwk)) {
+    throw new Error('Invalid JWK format');
+  }
+
+  // ParsedJwk is now typed as JsonWebKey thanks to the type guard
+  const jwkKey = parsedJwk;
   const privateKey = await crypto.subtle.importKey(
     'jwk',
-    JSON.parse(privateKeyJwk),
+    jwkKey,
     {
       name: 'RSA-OAEP',
       hash: 'SHA-256',
@@ -86,7 +151,7 @@ export async function initializeKeyPair(): Promise<string> {
 
     localStorage.setItem(STORAGE_KEYS.PUBLIC_KEY, publicKey);
     localStorage.setItem(STORAGE_KEYS.PRIVATE_KEY, privateKey);
-    
+
     return publicKey;
   }
 
@@ -94,9 +159,23 @@ export async function initializeKeyPair(): Promise<string> {
 }
 
 // Track if we're already fetching to prevent concurrent requests
-const retrievalState = {
+type RetrievalState = {
+  isRetrieving: boolean;
+  lastRetrievalError: number | undefined;
+};
+
+const createRetrievalState = (): RetrievalState => ({
   isRetrieving: false,
-  lastRetrievalError: undefined as number | undefined,
+  lastRetrievalError: undefined,
+});
+
+const retrievalStateHolder = {
+  state: createRetrievalState(),
+  setState: (newState: RetrievalState) => {
+    // This is intentionally mutable to manage state
+    // eslint-disable-next-line @silverhand/fp/no-mutation
+    retrievalStateHolder.state = newState;
+  },
 };
 const ERROR_BACKOFF_MS = 30_000; // 30 seconds
 
@@ -111,17 +190,20 @@ export async function retrieveAndDecryptSecret(
   getEncryptedClientSecret?: () => string | undefined
 ): Promise<string | undefined> {
   // Prevent concurrent requests
-  if (retrievalState.isRetrieving) {
-    return null;
+  if (retrievalStateHolder.state.isRetrieving) {
+    return undefined;
   }
 
   // If we had an error recently, don't retry yet
-  if (retrievalState.lastRetrievalError && Date.now() - retrievalState.lastRetrievalError < ERROR_BACKOFF_MS) {
-    return null;
+  if (
+    retrievalStateHolder.state.lastRetrievalError &&
+    Date.now() - retrievalStateHolder.state.lastRetrievalError < ERROR_BACKOFF_MS
+  ) {
+    return undefined;
   }
 
   try {
-    retrievalState.isRetrieving = true;
+    retrievalStateHolder.setState({ ...retrievalStateHolder.state, isRetrieving: true });
 
     // Clear any cached secret first to ensure we get a fresh one on each login
     localStorage.removeItem(STORAGE_KEYS.DECRYPTED_SECRET);
@@ -129,16 +211,24 @@ export async function retrieveAndDecryptSecret(
     const privateKey = localStorage.getItem(STORAGE_KEYS.PRIVATE_KEY);
     const publicKey = localStorage.getItem(STORAGE_KEYS.PUBLIC_KEY);
     if (!privateKey || !publicKey) {
-      retrievalState.lastRetrievalError = Date.now();
-      return null;
+      retrievalStateHolder.setState({
+        ...retrievalStateHolder.state,
+        isRetrieving: false,
+        lastRetrievalError: Date.now(),
+      });
+      return undefined;
     }
 
     // Get the encrypted client secret from the token response
     const encryptedClientSecret = getEncryptedClientSecret?.();
 
     if (!encryptedClientSecret) {
-      retrievalState.lastRetrievalError = Date.now();
-      return null;
+      retrievalStateHolder.setState({
+        ...retrievalStateHolder.state,
+        isRetrieving: false,
+        lastRetrievalError: Date.now(),
+      });
+      return undefined;
     }
 
     // Decrypt the client secret with our private key
@@ -149,10 +239,14 @@ export async function retrieveAndDecryptSecret(
 
     return decryptedSecret;
   } catch {
-    retrievalState.lastRetrievalError = Date.now();
-    return null;
+    retrievalStateHolder.setState({
+      ...retrievalStateHolder.state,
+      isRetrieving: false,
+      lastRetrievalError: Date.now(),
+    });
+    return undefined;
   } finally {
-    retrievalState.isRetrieving = false;
+    retrievalStateHolder.setState({ ...retrievalStateHolder.state, isRetrieving: false });
   }
 }
 
@@ -205,13 +299,14 @@ export async function encryptText(text: string, secret: string): Promise<string>
   const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(text));
 
   // Combine salt, iv, and encrypted data
-  const combined = new Uint8Array(salt.length + iv.length + encrypted.byteLength);
+  const encryptedArray = new Uint8Array(encrypted);
+  const combined = new Uint8Array(salt.length + iv.length + encryptedArray.length);
   combined.set(salt, 0);
   combined.set(iv, salt.length);
-  combined.set(new Uint8Array(encrypted), salt.length + iv.length);
+  combined.set(encryptedArray, salt.length + iv.length);
 
   // Return as base64
-  return fromUint8Array(combined, true);
+  return safeFromUint8Array(combined, true);
 }
 
 /**
@@ -223,7 +318,7 @@ export async function decryptText(encryptedText: string, secret: string): Promis
 
   try {
     // Decode from base64
-    const combined = toUint8Array(encryptedText);
+    const combined = safeToUint8Array(encryptedText);
 
     // Extract salt, iv, and encrypted data
     const salt = combined.slice(0, 16);

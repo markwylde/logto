@@ -3,19 +3,12 @@
  * These handle the custom flow for password sign-in with secret management.
  */
 
-import {
-  InteractionEvent,
-  type PasswordVerificationPayload,
-} from '@logto/schemas';
+import { InteractionEvent, type PasswordVerificationPayload } from '@logto/schemas';
 
 import api from '../api';
 
 import { experienceApiRoutes, type PasswordVerificationResponse } from './const';
-import {
-  initInteraction,
-  identifyUser,
-  submitInteraction,
-} from './interaction';
+import { initInteraction, identifyUser, submitInteraction } from './interaction';
 
 /**
  * Custom sign-in flow for zero-knowledge encryption.
@@ -25,14 +18,16 @@ import {
 export const signInWithPasswordAndManageSecret = async (
   payload: PasswordVerificationPayload,
   captchaToken?: string,
-  onSecretManagement?: (verificationId: string, encryptedSecret: string | undefined) => Promise<void>
+  onSecretManagement?: (
+    verificationId: string,
+    encryptedSecret: string | undefined
+  ) => Promise<void>
 ) => {
-  
   // Step 1: Initialize the interaction
   await initInteraction(InteractionEvent.SignIn, captchaToken);
 
   // Step 2: Verify the password
-  
+
   const passwordVerificationResponse = await api
     .post(`${experienceApiRoutes.verification}/password`, {
       json: payload,
@@ -48,7 +43,7 @@ export const signInWithPasswordAndManageSecret = async (
   if (onSecretManagement) {
     try {
       await onSecretManagement(verificationId, encryptedSecret ?? undefined);
-    } catch (error) {
+    } catch {
       // Continue with the flow even if secret management fails
     }
   }

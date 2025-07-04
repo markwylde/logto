@@ -10,7 +10,11 @@ import { splitPassword } from '@/utils/zero-knowledge-encryption';
 
 import api from '../api';
 
-import { experienceApiRoutes, type VerificationResponse, type PasswordVerificationResponse } from './const';
+import {
+  experienceApiRoutes,
+  type VerificationResponse,
+  type PasswordVerificationResponse,
+} from './const';
 import {
   initInteraction,
   identifyUser,
@@ -82,7 +86,7 @@ export const signInWithPasswordIdentifier = async (
 
   const { verificationId } = passwordVerificationResponse;
   const submitResult = await identifyAndSubmitInteraction({ verificationId });
-  
+
   return {
     ...submitResult,
     verificationId,
@@ -99,7 +103,7 @@ export const registerWithUsername = async (username: string, captchaToken?: stri
 export const continueRegisterWithPassword = async (password: string) => {
   // Split the password for zero-knowledge encryption
   const { serverPassword } = await splitPassword(password);
-  
+
   // Send only the server portion to the API
   await updateProfile({ type: 'password', value: serverPassword });
 

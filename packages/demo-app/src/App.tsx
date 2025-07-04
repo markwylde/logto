@@ -1,4 +1,4 @@
-import { type IdTokenClaims, LogtoProvider, useLogto, type Prompt } from '@logto/react';
+import { Prompt, LogtoProvider, useLogto } from '@logto/react';
 import i18next from 'i18next';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
@@ -11,18 +11,19 @@ import Callback from './Callback';
 import DevPanel from './DevPanel';
 import congratsDark from './assets/congrats-dark.svg';
 import congrats from './assets/congrats.svg';
-import { useHandleTokenResponse } from './hooks/use-handle-token-response';
+import EncryptionTool from './components/EncryptionTool';
+import UserInfoCard from './components/UserInfoCard';
+import { useAuthentication } from './hooks/use-authentication';
 import initI18n from './i18n/init';
 import { getLocalData, setLocalData } from './utils';
-import {
-  initializeKeyPair,
-  retrieveAndDecryptSecret,
-  clearEncryptionData,
-  encryptText,
-  decryptText,
-} from './utils/encryption';
+import { clearEncryptionData } from './utils/encryption';
 
 void initI18n();
+
+// Helper function to validate prompt values
+const isValidPrompt = (value: string): value is Prompt => {
+  return value === Prompt.None || value === Prompt.Consent || value === Prompt.Login;
+};
 
 // Set up fetch interceptor globally before anything else
 (() => {
@@ -37,7 +38,12 @@ void initI18n();
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data = await clonedResponse.json();
 
-        if (data.encrypted_client_secret) {
+        if (
+          data &&
+          typeof data === 'object' &&
+          'encrypted_client_secret' in data &&
+          data.encrypted_client_secret
+        ) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           sessionStorage.setItem('logto_encrypted_client_secret', data.encrypted_client_secret);
         }
@@ -48,144 +54,45 @@ void initI18n();
 
     return response;
   };
-  window.fetch = interceptedFetch;
+
+  // eslint-disable-next-line @silverhand/fp/no-mutating-assign
+  Object.assign(window, { fetch: interceptedFetch });
 })();
 
 const Main = () => {
-  const config = getLocalData('config');
-  const params = new URL(window.location.href).searchParams;
-  const { isAuthenticated, isLoading, getIdTokenClaims, getAccessToken, signIn, signOut } =
-    useLogto();
-  const [user, setUser] = useState<Pick<IdTokenClaims, 'sub' | 'username'>>();
-  const [decryptedSecret, setDecryptedSecret] = useState<string | undefined>(undefined);
-  const { getEncryptedClientSecret } = useHandleTokenResponse();
+  const { signOut } = useLogto();
+  const { isAuthenticated, isLoading, isInCallback, error, user, decryptedSecret } =
+    useAuthentication();
   const { t } = useTranslation(undefined, { keyPrefix: 'demo_app' });
-  const isInCallback = Boolean(params.get('code'));
+  const params = new URL(window.location.href).searchParams;
   const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const [congratsIcon, setCongratsIcon] = useState<string>(isDarkMode ? congratsDark : congrats);
   const [showDevPanel, setShowDevPanel] = useState(getLocalData('ui').showDevPanel ?? false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-  const error = params.get('error');
   const errorDescription = params.get('error_description');
-  const redirectUri = window.location.origin + window.location.pathname;
-
-  // Text encryption/decryption state
-  const [inputText, setInputText] = useState('');
-  const [outputText, setOutputText] = useState('');
-  const [encryptMode, setEncryptMode] = useState(true);
 
   const toggleDevPanel = useCallback(() => {
     setShowDevPanel((previous) => {
-      setLocalData('ui', { showDevPanel: !previous });
-      return !previous;
+      const newValue = !previous;
+      setLocalData('ui', { showDevPanel: newValue });
+      return newValue;
     });
   }, []);
 
-  const handleEncryptDecrypt = useCallback(async () => {
-    if (!decryptedSecret) {
-      setOutputText('Error: No secret available. Please authenticate first.');
-      return;
-    }
+  const handleSignOut = useCallback(async () => {
+    clearEncryptionData();
+    await signOut(`${window.location.origin}/demo-app`);
+  }, [signOut]);
 
-    if (!inputText.trim()) {
-      setOutputText('Error: Please enter some text to encrypt/decrypt.');
-      return;
-    }
-
-    try {
-      if (encryptMode) {
-        const encrypted = await encryptText(inputText, decryptedSecret);
-        setOutputText(encrypted);
-      } else {
-        const decrypted = await decryptText(inputText, decryptedSecret);
-        setOutputText(decrypted);
+  const handleSignOutKeyDown = useCallback(
+    ({ key }: React.KeyboardEvent) => {
+      if (key === 'Enter' || key === ' ') {
+        clearEncryptionData();
+        void signOut(`${window.location.origin}/demo-app`);
       }
-    } catch (error) {
-      setOutputText(`Error: ${error instanceof Error ? error.message : 'Unknown error occurred'}`);
-    }
-  }, [inputText, decryptedSecret, encryptMode]);
-
-  useEffect(() => {
-    if (isInCallback || isLoading || error) {
-      return;
-    }
-
-    const oneTimeToken = params.get('one_time_token');
-    const loginHint = params.get('login_hint');
-
-    const hasMagicLinkParams = Boolean(oneTimeToken && loginHint);
-
-    const loadIdTokenClaims = async () => {
-      const userInfo = await getIdTokenClaims();
-      setUser(userInfo ?? { sub: 'N/A', username: 'N/A' });
-    };
-
-    // If user is authenticated but user info is not loaded yet, load it
-    if (isAuthenticated && !user) {
-      void loadIdTokenClaims();
-    }
-
-    // Retrieve and decrypt the zero-knowledge secret after authentication
-    if (isAuthenticated && !decryptedSecret) {
-      const retrieveSecret = async () => {
-        const secret = await retrieveAndDecryptSecret(getAccessToken, getEncryptedClientSecret);
-        if (secret) {
-          setDecryptedSecret(secret);
-        }
-      };
-      void retrieveSecret();
-    }
-
-    // Initialize key pair and add public key to extra params
-    const initializeAndSignIn = async () => {
-      const publicKey = await initializeKeyPair();
-
-      const extraParams = Object.fromEntries(
-        new URLSearchParams([
-          ...new URLSearchParams(config.signInExtraParams).entries(),
-          ...new URLSearchParams(window.location.search).entries(),
-          ['public_key', publicKey],
-        ]).entries()
-      );
-
-      await signIn({ redirectUri, extraParams });
-    };
-
-    // If user is not authenticated, redirect to sign-in page
-    if (!isAuthenticated) {
-      void initializeAndSignIn();
-    }
-
-    if (isAuthenticated && hasMagicLinkParams) {
-      const extraParams = Object.fromEntries(
-        new URLSearchParams([
-          ...new URLSearchParams(config.signInExtraParams).entries(),
-          ...new URLSearchParams(window.location.search).entries(),
-        ]).entries()
-      );
-
-      void signIn({
-        clearTokens: false,
-        redirectUri,
-        extraParams,
-      });
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, [
-    params,
-    config.signInExtraParams,
-    error,
-    getIdTokenClaims,
-    getAccessToken,
-    getEncryptedClientSecret,
-    isAuthenticated,
-    isInCallback,
-    isLoading,
-    signIn,
-    user,
-    decryptedSecret,
-    redirectUri,
-  ]);
+    },
+    [signOut]
+  );
 
   useEffect(() => {
     const onThemeChange = (event: MediaQueryListEvent) => {
@@ -272,9 +179,6 @@ const Main = () => {
     <div className={styles.app}>
       <Helmet
         htmlAttributes={{
-          // We intentionally use the imported i18next instance instead of the hook, since the hook
-          // will cause a re-render following some bugs here. This still works for the initial
-          // render, so we're good for now. Consider refactoring this in the future.
           lang: i18next.language,
           dir: i18next.dir(),
         }}
@@ -284,241 +188,8 @@ const Main = () => {
         {congratsIcon && <img src={congratsIcon} alt="Congrats" />}
         <div className={styles.title}>{t('title')}</div>
         <div className={styles.text}>{t('subtitle')}</div>
-        <div className={styles.infoCard}>
-          {user.username && (
-            <div style={{ textAlign: 'left', marginBottom: '15px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{t('username')}</div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '4px',
-                  fontSize: '0.9em',
-                  fontFamily: 'monospace',
-                  overflow: 'auto',
-                  maxWidth: '100%',
-                  color: 'inherit',
-                }}
-              >
-                {user.username}
-              </pre>
-            </div>
-          )}
-          <div style={{ textAlign: 'left', marginBottom: '15px' }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{t('user_id')}</div>
-            <pre
-              style={{
-                margin: 0,
-                padding: '8px',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '4px',
-                fontSize: '0.9em',
-                fontFamily: 'monospace',
-                overflow: 'auto',
-                maxWidth: '100%',
-                color: 'inherit',
-              }}
-            >
-              {user.sub}
-            </pre>
-          </div>
-          {decryptedSecret && (
-            <div style={{ textAlign: 'left', marginBottom: '15px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Zero-Knowledge Secret:</div>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: '8px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '4px',
-                  fontSize: '0.9em',
-                  fontFamily: 'monospace',
-                  overflow: 'auto',
-                  maxWidth: '100%',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  color: 'inherit',
-                }}
-              >
-                {decryptedSecret}
-              </pre>
-            </div>
-          )}
-          {!decryptedSecret && (
-            <div style={{ textAlign: 'left', marginBottom: '15px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Zero-Knowledge Secret:</div>
-              <div style={{ fontSize: '0.9em', color: '#666', fontStyle: 'italic' }}>
-                Secret retrieval in progress...
-              </div>
-            </div>
-          )}
-
-          {decryptedSecret && (
-            <div
-              style={{
-                borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-                paddingTop: '20px',
-                marginTop: '20px',
-              }}
-            >
-              <div
-                style={{
-                  marginBottom: '15px',
-                  fontWeight: 'bold',
-                  fontSize: '1.1em',
-                  textAlign: 'left',
-                }}
-              >
-                Text Encryption Tool
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '4px',
-                    backgroundColor: encryptMode ? '#007bff' : 'rgba(255, 255, 255, 0.1)',
-                    color: encryptMode ? 'white' : 'inherit',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                  }}
-                  onClick={() => {
-                    setEncryptMode(true);
-                    setInputText('');
-                    setOutputText('');
-                  }}
-                >
-                  Encrypt
-                </button>
-                <button
-                  style={{
-                    padding: '6px 12px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '4px',
-                    backgroundColor: encryptMode ? 'rgba(255, 255, 255, 0.1)' : '#007bff',
-                    color: encryptMode ? 'inherit' : 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                  }}
-                  onClick={() => {
-                    setEncryptMode(false);
-                    setInputText('');
-                    setOutputText('');
-                  }}
-                >
-                  Decrypt
-                </button>
-              </div>
-
-              <div style={{ marginBottom: '10px' }}>
-                <label
-                  style={{
-                    display: 'block',
-                    marginBottom: '5px',
-                    fontSize: '0.85em',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {encryptMode ? 'Text to encrypt:' : 'Encrypted text to decrypt:'}
-                </label>
-                <textarea
-                  value={inputText}
-                  placeholder={
-                    encryptMode ? 'Enter text to encrypt...' : 'Enter encrypted text to decrypt...'
-                  }
-                  style={{
-                    width: '100%',
-                    height: '60px',
-                    padding: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '4px',
-                    fontSize: '0.85em',
-                    fontFamily: 'monospace',
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                    color: 'inherit',
-                    resize: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                  onChange={(event) => {
-                    setInputText(event.target.value);
-                  }}
-                />
-              </div>
-
-              <div style={{ marginBottom: '10px' }}>
-                <button
-                  disabled={!inputText.trim()}
-                  style={{
-                    padding: '8px 16px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    backgroundColor: inputText.trim() ? '#28a745' : '#6c757d',
-                    color: 'white',
-                    cursor: inputText.trim() ? 'pointer' : 'not-allowed',
-                    fontSize: '0.85em',
-                    fontWeight: 'bold',
-                  }}
-                  onClick={handleEncryptDecrypt}
-                >
-                  {encryptMode ? 'Encrypt Text' : 'Decrypt Text'}
-                </button>
-              </div>
-
-              {outputText && (
-                <div>
-                  <label
-                    style={{
-                      display: 'block',
-                      marginBottom: '5px',
-                      fontSize: '0.85em',
-                      fontWeight: 'bold',
-                    }}
-                  >
-                    {encryptMode ? 'Encrypted result:' : 'Decrypted result:'}
-                  </label>
-                  <textarea
-                    readOnly
-                    value={outputText}
-                    style={{
-                      width: '100%',
-                      height: '60px',
-                      padding: '6px',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                      borderRadius: '4px',
-                      fontSize: '0.85em',
-                      fontFamily: 'monospace',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      color: 'inherit',
-                      resize: 'none',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                  <div style={{ marginTop: '5px' }}>
-                    <button
-                      style={{
-                        padding: '4px 8px',
-                        border: '1px solid rgba(255, 255, 255, 0.3)',
-                        borderRadius: '4px',
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        color: 'inherit',
-                        cursor: 'pointer',
-                        fontSize: '0.75em',
-                      }}
-                      onClick={async () => navigator.clipboard.writeText(outputText)}
-                    >
-                      Copy to Clipboard
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <UserInfoCard user={user} decryptedSecret={decryptedSecret} />
+        {decryptedSecret && <EncryptionTool decryptedSecret={decryptedSecret} />}
 
         <div
           role="button"
@@ -539,16 +210,8 @@ const Main = () => {
           role="button"
           tabIndex={0}
           className={styles.button}
-          onClick={async () => {
-            clearEncryptionData();
-            await signOut(`${window.location.origin}/demo-app`);
-          }}
-          onKeyDown={({ key }) => {
-            if (key === 'Enter' || key === ' ') {
-              clearEncryptionData();
-              void signOut(`${window.location.origin}/demo-app`);
-            }
-          }}
+          onClick={handleSignOut}
+          onKeyDown={handleSignOutKeyDown}
         >
           {t('sign_out')}
         </div>
@@ -556,7 +219,9 @@ const Main = () => {
           role="button"
           tabIndex={0}
           className={styles.button}
-          onClick={toggleDevPanel}
+          onClick={() => {
+            toggleDevPanel();
+          }}
           onKeyDown={({ key }) => {
             if (key === 'Enter' || key === ' ') {
               toggleDevPanel();
@@ -578,10 +243,10 @@ const App = () => {
     <LogtoProvider
       config={{
         endpoint: 'http://localhost:3001',
-        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- We need to fall back for empty string
-        appId: params.get('app_id') || config.appId || '91zok5zm229p3ouzjin1q',
-        // eslint-disable-next-line no-restricted-syntax
-        prompt: config.prompt ? (config.prompt.split(' ') as Prompt[]) : [],
+        appId: params.get('app_id') ?? config.appId ?? '91zok5zm229p3ouzjin1q',
+        prompt: config.prompt
+          ? config.prompt.split(' ').filter((prompt): prompt is Prompt => isValidPrompt(prompt))
+          : [],
         scopes: config.scope ? config.scope.split(' ') : [],
         resources: config.resource ? config.resource.split(' ') : [],
       }}

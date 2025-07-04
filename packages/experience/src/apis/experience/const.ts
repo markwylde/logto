@@ -14,5 +14,5 @@ export type VerificationResponse = {
 };
 
 export type PasswordVerificationResponse = VerificationResponse & {
-  encryptedSecret?: string | null;
+  encryptedSecret?: string | undefined;
 };

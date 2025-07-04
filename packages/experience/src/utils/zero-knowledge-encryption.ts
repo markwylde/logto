@@ -4,6 +4,14 @@
  * operations using the Web Crypto API.
  */
 
+import { uint8ArrayToBase64, base64ToUint8Array } from 'uint8array-extras';
+
+function parseJsonWebKey(jwkString: string): JsonWebKey {
+  // We assume the string contains a valid JWK since it's coming from our own key generation
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return JSON.parse(jwkString);
+}
+
 /**
  * Split a password into two derived keys: one for server authentication and one for client encryption.
  * Uses PBKDF2 for key derivation with different salts.
@@ -11,7 +19,6 @@
 export async function splitPassword(
   password: string
 ): Promise<{ serverPassword: string; clientPassword: string }> {
-  
   const encoder = new TextEncoder();
   const passwordData = encoder.encode(password);
 
@@ -20,20 +27,16 @@ export async function splitPassword(
   const clientSalt = encoder.encode('logto_client_password_salt');
 
   // Import the password as a CryptoKey
-  const baseKey = await crypto.subtle.importKey(
-    'raw',
-    passwordData,
-    'PBKDF2',
-    false,
-    ['deriveBits']
-  );
+  const baseKey = await crypto.subtle.importKey('raw', passwordData, 'PBKDF2', false, [
+    'deriveBits',
+  ]);
 
   // Derive server password
   const serverBits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
       salt: serverSalt,
-      iterations: 100000,
+      iterations: 100_000,
       hash: 'SHA-256',
     },
     baseKey,
@@ -45,7 +48,7 @@ export async function splitPassword(
     {
       name: 'PBKDF2',
       salt: clientSalt,
-      iterations: 100000,
+      iterations: 100_000,
       hash: 'SHA-256',
     },
     baseKey,
@@ -53,9 +56,8 @@ export async function splitPassword(
   );
 
   // Convert to base64 strings
-  const serverPassword = btoa(String.fromCharCode(...new Uint8Array(serverBits)));
-  const clientPassword = btoa(String.fromCharCode(...new Uint8Array(clientBits)));
-
+  const serverPassword = uint8ArrayToBase64(new Uint8Array(serverBits));
+  const clientPassword = uint8ArrayToBase64(new Uint8Array(clientBits));
 
   return { serverPassword, clientPassword };
 }
@@ -66,7 +68,7 @@ export async function splitPassword(
 export function generateSecret(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  return btoa(String.fromCharCode(...array));
+  return uint8ArrayToBase64(array);
 }
 
 /**
@@ -75,10 +77,10 @@ export function generateSecret(): string {
 export async function encryptWithPassword(data: string, password: string): Promise<string> {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
-  
+
   // Generate a random IV
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  
+
   // Derive key from password
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -87,12 +89,12 @@ export async function encryptWithPassword(data: string, password: string): Promi
     false,
     ['deriveKey']
   );
-  
+
   const key = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt: encoder.encode('logto_encryption_salt'),
-      iterations: 100000,
+      iterations: 100_000,
       hash: 'SHA-256',
     },
     keyMaterial,
@@ -100,36 +102,35 @@ export async function encryptWithPassword(data: string, password: string): Promi
     false,
     ['encrypt']
   );
-  
+
   // Encrypt the data
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    dataBuffer
-  );
-  
+  const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, dataBuffer);
+
   // Combine IV and encrypted data
   const combined = new Uint8Array(iv.length + encrypted.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
-  
-  return btoa(String.fromCharCode(...combined));
+
+  return uint8ArrayToBase64(combined);
 }
 
 /**
  * Decrypt data using AES-GCM with a password-derived key.
  */
-export async function decryptWithPassword(encryptedData: string, password: string): Promise<string> {
+export async function decryptWithPassword(
+  encryptedData: string,
+  password: string
+): Promise<string> {
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-  
+
   // Decode from base64
-  const combined = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
-  
+  const combined = base64ToUint8Array(encryptedData);
+
   // Extract IV and encrypted data
   const iv = combined.slice(0, 12);
   const encrypted = combined.slice(12);
-  
+
   // Derive key from password
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -138,12 +139,12 @@ export async function decryptWithPassword(encryptedData: string, password: strin
     false,
     ['deriveKey']
   );
-  
+
   const key = await crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
       salt: encoder.encode('logto_encryption_salt'),
-      iterations: 100000,
+      iterations: 100_000,
       hash: 'SHA-256',
     },
     keyMaterial,
@@ -151,14 +152,10 @@ export async function decryptWithPassword(encryptedData: string, password: strin
     false,
     ['decrypt']
   );
-  
+
   // Decrypt the data
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    encrypted
-  );
-  
+  const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted);
+
   return decoder.decode(decrypted);
 }
 
@@ -196,19 +193,15 @@ export async function generateKeyPair(): Promise<{
  */
 export async function deriveAppSecret(baseSecret: string, appId: string): Promise<string> {
   const encoder = new TextEncoder();
-  
+
   // Convert base secret from base64 to bytes
-  const secretBytes = Uint8Array.from(atob(baseSecret), (c) => c.charCodeAt(0));
-  
+  const secretBytes = base64ToUint8Array(baseSecret);
+
   // Import the base secret as key material
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    secretBytes,
-    'HKDF',
-    false,
-    ['deriveKey']
-  );
-  
+  const keyMaterial = await crypto.subtle.importKey('raw', secretBytes, 'HKDF', false, [
+    'deriveKey',
+  ]);
+
   // Derive app-specific key using HKDF
   const derivedKey = await crypto.subtle.deriveKey(
     {
@@ -222,12 +215,12 @@ export async function deriveAppSecret(baseSecret: string, appId: string): Promis
     true,
     ['encrypt', 'decrypt']
   );
-  
+
   // Export the derived key as raw bytes
   const derivedKeyBytes = await crypto.subtle.exportKey('raw', derivedKey);
-  
+
   // Convert to base64 string for consistent format
-  return btoa(String.fromCharCode(...new Uint8Array(derivedKeyBytes)));
+  return uint8ArrayToBase64(new Uint8Array(derivedKeyBytes));
 }
 
 /**
@@ -240,7 +233,7 @@ export async function encryptWithPublicKey(data: string, publicKeyJwk: string): 
   // Import the public key
   const publicKey = await crypto.subtle.importKey(
     'jwk',
-    JSON.parse(publicKeyJwk),
+    parseJsonWebKey(publicKeyJwk),
     {
       name: 'RSA-OAEP',
       hash: 'SHA-256',
@@ -250,13 +243,9 @@ export async function encryptWithPublicKey(data: string, publicKeyJwk: string): 
   );
 
   // Encrypt the data
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'RSA-OAEP' },
-    publicKey,
-    dataBuffer
-  );
+  const encrypted = await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, publicKey, dataBuffer);
 
-  return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return uint8ArrayToBase64(new Uint8Array(encrypted));
 }
 
 /**
@@ -269,12 +258,12 @@ export async function decryptWithPrivateKey(
   const decoder = new TextDecoder();
 
   // Decode from base64
-  const encrypted = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
+  const encrypted = base64ToUint8Array(encryptedData);
 
   // Import the private key
   const privateKey = await crypto.subtle.importKey(
     'jwk',
-    JSON.parse(privateKeyJwk),
+    parseJsonWebKey(privateKeyJwk),
     {
       name: 'RSA-OAEP',
       hash: 'SHA-256',
@@ -284,11 +273,7 @@ export async function decryptWithPrivateKey(
   );
 
   // Decrypt the data
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'RSA-OAEP' },
-    privateKey,
-    encrypted
-  );
+  const decrypted = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, privateKey, encrypted);
 
   return decoder.decode(decrypted);
 }

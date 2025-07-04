@@ -14,8 +14,8 @@ import type { ErrorHandlers } from '@/hooks/use-error-handler';
 import useErrorHandler from '@/hooks/use-error-handler';
 
 import useGlobalRedirectTo from './use-global-redirect-to';
-import useSubmitInteractionErrorHandler from './use-submit-interaction-error-handler';
 import usePasswordInterceptor from './use-password-interceptor';
+import useSubmitInteractionErrorHandler from './use-submit-interaction-error-handler';
 
 const usePasswordSignIn = () => {
   const [errorMessage, setErrorMessage] = useState<string>();
@@ -63,8 +63,11 @@ const usePasswordSignIn = () => {
 
       // Check if we need to handle zero-knowledge encryption
       const publicKey = new URLSearchParams(window.location.search).get('public_key');
-      console.log('[usePasswordSignIn] Public key from URL:', publicKey ? 'Present' : 'Not present');
-      
+      console.log(
+        '[usePasswordSignIn] Public key from URL:',
+        publicKey ? 'Present' : 'Not present'
+      );
+
       if (publicKey) {
         console.log('[usePasswordSignIn] Using zero-knowledge flow');
         // Use the custom flow that allows secret management before submission
@@ -97,7 +100,17 @@ const usePasswordSignIn = () => {
         }
       }
     },
-    [asyncSignIn, asyncSignInWithSecret, checkSingleSignOn, errorHandlers, handleError, redirectTo, executeCaptcha, processPassword, handleSecretManagement]
+    [
+      asyncSignIn,
+      asyncSignInWithSecret,
+      checkSingleSignOn,
+      errorHandlers,
+      handleError,
+      redirectTo,
+      executeCaptcha,
+      processPassword,
+      handleSecretManagement,
+    ]
   );
 
   return {

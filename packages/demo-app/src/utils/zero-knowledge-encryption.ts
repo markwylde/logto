@@ -1,5 +1,6 @@
 // Encryption functions for zero-knowledge secret management
 import { toUint8Array, fromUint8Array } from 'js-base64';
+
 export async function encryptWithPassword(data: string, password: string): Promise<string> {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
@@ -33,9 +34,7 @@ export async function encryptWithPassword(data: string, password: string): Promi
   combined.set(iv, 0);
   combined.set(new Uint8Array(encrypted), iv.length);
 
-  const result = fromUint8Array(combined, true);
-
-  return result;
+  return fromUint8Array(combined, true);
 }
 
 export async function decryptWithPassword(
