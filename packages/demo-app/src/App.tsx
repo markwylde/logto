@@ -58,7 +58,7 @@ const Main = () => {
   const { isAuthenticated, isLoading, getIdTokenClaims, getAccessToken, signIn, signOut } =
     useLogto();
   const [user, setUser] = useState<Pick<IdTokenClaims, 'sub' | 'username'>>();
-  const [decryptedSecret, setDecryptedSecret] = useState<string | undefined>(null);
+  const [decryptedSecret, setDecryptedSecret] = useState<string | undefined>(undefined);
   const { getEncryptedClientSecret } = useHandleTokenResponse();
   const { t } = useTranslation(undefined, { keyPrefix: 'demo_app' });
   const isInCallback = Boolean(params.get('code'));
