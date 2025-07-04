@@ -37,9 +37,8 @@ void initI18n();
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const data = await clonedResponse.json();
 
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         if (data.encrypted_client_secret) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           sessionStorage.setItem('logto_encrypted_client_secret', data.encrypted_client_secret);
         }
       } catch {
