@@ -165,6 +165,7 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       }
 
       // Handle authenticated user password change flow
+      // Check interaction type first before checking identification
       assertThat(
         'oldPassword' in guard.body && 'newPassword' in guard.body,
         new RequestError({
