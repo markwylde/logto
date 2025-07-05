@@ -20,6 +20,7 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
         encryptedSecret: z.string(),
       }),
       status: [200, 400, 401],
+      response: z.undefined(),
     }),
     async (ctx, next) => {
       const { experienceInteraction } = ctx;
@@ -51,6 +52,7 @@ export default function secretRoutes<T extends ExperienceInteractionRouterContex
         encryptedClientSecret: z.string(),
       }),
       status: [200, 400],
+      response: z.undefined(),
     }),
     async (ctx, next) => {
       const { experienceInteraction } = ctx;

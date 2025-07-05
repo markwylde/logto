@@ -37,6 +37,10 @@ const devFeatureCustomRoutes: RouteDictionary = Object.freeze({
 });
 
 export const customRoutes: Readonly<RouteDictionary> = Object.freeze({
+  // Experience secret routes
+  'put /experience/secret/user': 'SetUserEncryptedSecret',
+  'put /experience/secret/session': 'SetSessionEncryptedSecret',
+  'get /experience/secret/session': 'GetSessionEncryptedSecret',
   // Authn
   'get /authn/hasura': 'GetHasuraAuth',
   'post /authn/saml/:connectorId': 'AssertSaml',
