@@ -52,13 +52,13 @@
     "@types/debug": "^4.1.7",
     "@types/jest": "^29.4.0",
     "@types/mdx": "^2.0.13",
+    "@types/psl": "^1.1.3",
     "@types/react": "^18.3.3",
     "@types/react-color": "^3.0.6",
     "@types/react-dom": "^18.3.0",
     "@types/react-helmet": "^6.1.6",
     "@types/react-modal": "^3.13.1",
     "@types/react-syntax-highlighter": "^15.5.1",
-    "@types/psl": "^1.1.3",
     "@vitejs/plugin-react": "^4.3.1",
     "@withtyped/client": "^0.8.8",
     "classnames": "^2.3.1",
@@ -132,5 +132,8 @@
   "stylelint": {
     "extends": "@silverhand/eslint-config-react/.stylelintrc"
   },
-  "prettier": "@silverhand/eslint-config/.prettierrc"
+  "prettier": "@silverhand/eslint-config/.prettierrc",
+  "dependencies": {
+    "js-base64": "^3.7.5"
+  }
 }

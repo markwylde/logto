@@ -3,6 +3,10 @@
     {
       "name": "Experience",
       "description": "The Experience endpoints allow end-users to interact with Logto for identity verification and profile completion."
+    },
+    {
+      "name": "Experience secret",
+      "description": "Experience API endpoints for encrypted secret management"
     }
   ],
   "paths": {
@@ -115,6 +119,96 @@
           },
           "422": {
             "description": "The user profile can not been processed, check error message for more details. <br/>- The profile data is invalid or conflicts with existing user data. <br/>- Required profile data is missing. <br/>- The profile data is already in use by another user account."
+          }
+        }
+      }
+    },
+    "/api/experience/secret/user": {
+      "put": {
+        "operationId": "SetUserEncryptedSecret",
+        "summary": "Store user encrypted secret",
+        "description": "Store an encrypted secret for the currently identified user during the experience interaction.",
+        "tags": ["Experience secret"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "encryptedSecret": {
+                    "type": "string",
+                    "description": "The encrypted secret to store for the user"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The encrypted secret has been successfully stored for the user."
+          },
+          "400": {
+            "description": "Invalid request body or parameters."
+          },
+          "401": {
+            "description": "User is not identified in the current interaction."
+          }
+        }
+      }
+    },
+    "/api/experience/secret/session": {
+      "put": {
+        "operationId": "SetSessionEncryptedSecret",
+        "summary": "Store session encrypted client secret",
+        "description": "Store an encrypted client secret in the current experience interaction session.",
+        "tags": ["Experience secret"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "encryptedClientSecret": {
+                    "type": "string",
+                    "description": "The encrypted client secret to store in the session"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The encrypted client secret has been successfully stored in the session."
+          },
+          "400": {
+            "description": "Invalid request body or parameters."
+          }
+        }
+      },
+      "get": {
+        "operationId": "GetSessionEncryptedSecret",
+        "summary": "Get session encrypted client secret",
+        "description": "Retrieve the encrypted client secret from the current experience interaction session.",
+        "tags": ["Experience secret"],
+        "responses": {
+          "200": {
+            "description": "The encrypted client secret retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "encryptedClientSecret": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "The encrypted client secret from the session, or null if not set"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "User is not authenticated or session is invalid."
           }
         }
       }

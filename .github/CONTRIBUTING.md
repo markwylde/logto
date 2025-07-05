@@ -112,6 +112,70 @@ pnpm dev
 
 The command will watch the changes in most of the packages and restart services when needed.
 
+## Running Integration Tests
+
+The integration tests require special setup since they test the complete Logto system including authentication flows and database operations.
+
+### Quick Start
+
+1. **Reset test database** (creates fresh PostgreSQL container):
+   ```bash
+   cd packages/integration-tests
+   ./reset-test-db.sh
+   ```
+
+2. **Add mock connectors**:
+   ```bash
+   set -a && source .env.test && set +a && pnpm cli connector add @logto/connector-mock-social @logto/connector-mock-email @logto/connector-mock-sms -p .
+   ```
+
+3. **Start development server**:
+   ```bash
+   set -a && source .env.test && set +a && pnpm start:dev
+   ```
+
+4. **Run tests**:
+   ```bash
+   cd packages/integration-tests
+   pnpm run test:api          # Run API tests only  
+   pnpm run test:experience   # Run experience tests only
+   pnpm run test:console      # Run console tests only
+   pnpm run test              # Run all integration tests
+   ```
+
+### Database Isolation
+
+• **Complete isolation**: Each test run should use a fresh database for reliable results
+• **Reset script**: Use `./reset-test-db.sh` to completely recreate PostgreSQL container
+• **Clean state**: Script drops container, creates fresh one, and seeds with test data
+• **Mock connectors**: Must be re-added after database reset
+
+### Key Requirements
+
+• **PostgreSQL container**: Docker container named `logto-postgres-dev` on port 5432
+• **Integration test mode**: `INTEGRATION_TEST=1` enables development authentication headers
+• **Test database**: Use `logto_test` database for isolation from development data
+• **Mock connectors**: Required for testing social, email, and SMS functionality
+
+### Environment Variables
+
+The project includes a `.env.test` file with all required environment variables:
+
+• `INTEGRATION_TEST=1`: Enables development authentication mode
+• `DB_URL`: Test database connection string
+• `DEV_FEATURES_ENABLED=false`: Disables development features for consistent testing
+• `SECRET_VAULT_KEK`: Key encryption key for the secret vault (test-only value)
+• `INTEGRATION_TESTS_LOGTO_URL`: Logto core URL (defaults to `http://localhost:3001`)
+• `INTEGRATION_TESTS_LOGTO_CONSOLE_URL`: Console URL (defaults to `http://localhost:3002`)
+
+### Troubleshooting
+
+• **401 Unauthorized**: Missing `INTEGRATION_TEST=1` or database not seeded
+• **Database errors**: Run `./reset-test-db.sh` to create fresh database
+• **Connector errors**: Re-add mock connectors after database reset
+• **Port conflicts**: Kill existing Node.js processes with `pkill -f "node"`
+• **Test pollution**: Always reset database before running test suites
+
 ## Make changes
 
 By default, Logto runs in `http://localhost:3001`, which will redirect you to the Admin Console.
