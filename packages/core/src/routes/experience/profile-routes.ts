@@ -134,15 +134,6 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       const { experienceInteraction, guard, createLog } = ctx;
       const { identifiedUserId, interactionEvent } = experienceInteraction;
 
-      // Guard interaction is identified
-      assertThat(
-        identifiedUserId,
-        new RequestError({
-          code: 'session.identifier_not_found',
-          status: 404,
-        })
-      );
-
       // Handle ForgotPassword flow
       if (interactionEvent === InteractionEvent.ForgotPassword) {
         // Validate that this is the simple password reset format
@@ -151,6 +142,15 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
           new RequestError({
             code: 'guard.invalid_input',
             status: 400,
+          })
+        );
+
+        // Guard interaction is identified for ForgotPassword
+        assertThat(
+          identifiedUserId,
+          new RequestError({
+            code: 'session.identifier_not_found',
+            status: 404,
           })
         );
 
@@ -168,8 +168,17 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       assertThat(
         'oldPassword' in guard.body && 'newPassword' in guard.body,
         new RequestError({
-          code: 'guard.invalid_input',
+          code: 'session.invalid_interaction_type',
           status: 400,
+        })
+      );
+
+      // Guard interaction is identified for authenticated flow
+      assertThat(
+        identifiedUserId,
+        new RequestError({
+          code: 'session.identifier_not_found',
+          status: 401,
         })
       );
 
