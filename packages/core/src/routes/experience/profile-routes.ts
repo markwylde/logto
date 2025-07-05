@@ -114,39 +114,85 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
     }
   );
 
+  // Password update route - handles both ForgotPassword and authenticated flows
   router.put(
     `${experienceRoutes.profile}/password`,
     koaGuard({
-      body: z.object({
-        password: z.string(),
-      }),
-      status: [204, 400, 404, 422],
+      body: z.union([
+        z.object({
+          password: z.string(),
+        }),
+        z.object({
+          oldPassword: z.string(),
+          newPassword: z.string(),
+          encryptedSecret: z.string().optional(),
+        }),
+      ]),
+      status: [204, 400, 401, 403, 404, 422],
     }),
     async (ctx, next) => {
       const { experienceInteraction, guard, createLog } = ctx;
-      const { password } = guard.body;
-
-      assertThat(
-        experienceInteraction.interactionEvent === InteractionEvent.ForgotPassword,
-        new RequestError({
-          code: 'session.invalid_interaction_type',
-          status: 400,
-        })
-      );
-
-      createLog(`Interaction.ForgotPassword.Profile.Update`);
+      const { identifiedUserId, interactionEvent } = experienceInteraction;
 
       // Guard interaction is identified
       assertThat(
-        experienceInteraction.identifiedUserId,
+        identifiedUserId,
         new RequestError({
           code: 'session.identifier_not_found',
           status: 404,
         })
       );
 
-      await experienceInteraction.profile.setPasswordDigestWithValidation(password, true);
-      await experienceInteraction.save();
+      // Handle ForgotPassword flow
+      if (interactionEvent === InteractionEvent.ForgotPassword) {
+        // Validate that this is the simple password reset format
+        assertThat(
+          'password' in guard.body && !('oldPassword' in guard.body),
+          new RequestError({
+            code: 'guard.invalid_input',
+            status: 400,
+          })
+        );
+
+        const { password } = guard.body;
+        createLog(`Interaction.ForgotPassword.Profile.Update`);
+
+        await experienceInteraction.profile.setPasswordDigestWithValidation(password, true);
+        await experienceInteraction.save();
+
+        ctx.status = 204;
+        return next();
+      }
+
+      // Handle authenticated user password change flow
+      assertThat(
+        'oldPassword' in guard.body && 'newPassword' in guard.body,
+        new RequestError({
+          code: 'guard.invalid_input',
+          status: 400,
+        })
+      );
+
+      const { oldPassword, newPassword, encryptedSecret } = guard.body;
+
+      // Get the user
+      const user = await tenant.queries.users.findUserById(identifiedUserId);
+
+      // Both passwords are already server portions (pre-split by client)
+
+      // Verify the old password is correct
+      await tenant.libraries.users.verifyUserPassword(user, oldPassword);
+
+      // Encrypt the new server password
+      const { passwordEncrypted, passwordEncryptionMethod } =
+        await encryptUserPassword(newPassword);
+
+      // Update user with new password and optionally new encrypted secret
+      await tenant.queries.users.updateUserById(identifiedUserId, {
+        passwordEncrypted,
+        passwordEncryptionMethod,
+        ...(encryptedSecret && { encryptedSecret }),
+      });
 
       ctx.status = 204;
 
@@ -241,55 +287,6 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       ctx.body = {
         encryptedSecret: user.encryptedSecret,
       };
-
-      return next();
-    }
-  );
-
-  // Change password for authenticated users
-  router.put(
-    `${experienceRoutes.profile}/password`,
-    koaGuard({
-      body: z.object({
-        oldPassword: z.string(),
-        newPassword: z.string(),
-        encryptedSecret: z.string().optional(),
-      }),
-      status: [204, 400, 401, 403, 422],
-    }),
-    async (ctx, next) => {
-      const { experienceInteraction, guard, createLog } = ctx;
-      const { oldPassword, newPassword, encryptedSecret } = guard.body;
-      const { identifiedUserId } = experienceInteraction;
-
-      assertThat(
-        identifiedUserId,
-        new RequestError({
-          code: 'session.identifier_not_found',
-          status: 401,
-        })
-      );
-
-      // Get the user
-      const user = await tenant.queries.users.findUserById(identifiedUserId);
-
-      // Both passwords are already server portions (pre-split by client)
-
-      // Verify the old password is correct
-      await tenant.libraries.users.verifyUserPassword(user, oldPassword);
-
-      // Encrypt the new server password
-      const { passwordEncrypted, passwordEncryptionMethod } =
-        await encryptUserPassword(newPassword);
-
-      // Update user with new password and optionally new encrypted secret
-      await tenant.queries.users.updateUserById(identifiedUserId, {
-        passwordEncrypted,
-        passwordEncryptionMethod,
-        ...(encryptedSecret && { encryptedSecret }),
-      });
-
-      ctx.status = 204;
 
       return next();
     }

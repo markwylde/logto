@@ -83,24 +83,38 @@
           "content": {
             "application/json": {
               "schema": {
-                "properties": {
-                  "password": {
-                    "type": "string",
-                    "description": "The new password to set (ForgotPassword flow only). The password must meet the password policy requirements and can not be the same as the current password."
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "password": {
+                        "type": "string",
+                        "description": "The new password to set (ForgotPassword flow only). The password must meet the password policy requirements and can not be the same as the current password."
+                      }
+                    },
+                    "required": ["password"],
+                    "additionalProperties": false
                   },
-                  "oldPassword": {
-                    "type": "string",
-                    "description": "The current password for verification (authenticated flow only)."
-                  },
-                  "newPassword": {
-                    "type": "string",
-                    "description": "The new password to set (authenticated flow only)."
-                  },
-                  "encryptedSecret": {
-                    "type": "string",
-                    "description": "Optional encrypted secret for zero-knowledge authentication (authenticated flow only)."
+                  {
+                    "type": "object",
+                    "properties": {
+                      "oldPassword": {
+                        "type": "string",
+                        "description": "The current password for verification (authenticated flow only)."
+                      },
+                      "newPassword": {
+                        "type": "string",
+                        "description": "The new password to set (authenticated flow only)."
+                      },
+                      "encryptedSecret": {
+                        "type": "string",
+                        "description": "Optional encrypted secret for zero-knowledge authentication (authenticated flow only)."
+                      }
+                    },
+                    "required": ["oldPassword", "newPassword"],
+                    "additionalProperties": false
                   }
-                }
+                ]
               }
             }
           }
