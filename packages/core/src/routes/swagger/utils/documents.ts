@@ -73,7 +73,12 @@ const additionalTags = Object.freeze(
 );
 
 /** Additional tags for experience API that cannot be inferred from the path. */
-const experienceAdditionalTags = Object.freeze(['Experience secret']);
+const experienceAdditionalTags = Object.freeze([
+  {
+    name: 'Experience secret',
+    description: 'Experience API endpoints for encrypted secret management',
+  },
+]);
 
 export const buildManagementApiBaseDocument = (
   pathMap: Map<string, OpenAPIV3.PathItemObject>,
@@ -170,7 +175,7 @@ export const buildExperienceApiBaseDocument = (
       customParameters()
     ),
   },
-  tags: [...tags, ...experienceAdditionalTags].map((tag) => ({ name: tag })),
+  tags: [...Array.from(tags).map((tag) => ({ name: tag })), ...experienceAdditionalTags],
 });
 
 const userApiIdentifiableEntityNames = Object.freeze(['profile', 'verification']);
