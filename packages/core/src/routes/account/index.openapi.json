@@ -184,6 +184,40 @@
         }
       }
     },
+    "/api/my-account/password/profile": {
+      "get": {
+        "operationId": "GetPasswordProfile",
+        "summary": "Get password profile",
+        "description": "Get password status and encrypted secret for the user. Used for zero-knowledge password change operations.",
+        "responses": {
+          "200": {
+            "description": "Password profile retrieved successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasPassword": {
+                      "type": "boolean",
+                      "description": "Whether the user has a password set."
+                    },
+                    "encryptedSecret": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Encrypted secret for zero-knowledge authentication, null if not available."
+                    }
+                  },
+                  "required": ["hasPassword", "encryptedSecret"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized, authentication required."
+          }
+        }
+      }
+    },
     "/api/my-account/mfa-settings": {
       "get": {
         "operationId": "GetMfaSettings",
