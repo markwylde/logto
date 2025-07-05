@@ -73,7 +73,7 @@ const additionalTags = Object.freeze(
 );
 
 /** Additional tags for experience API that cannot be inferred from the path. */
-const experienceAdditionalTags = Object.freeze(condArray<string>('Experience secret'));
+const experienceAdditionalTags = Object.freeze(['Experience secret']);
 
 export const buildManagementApiBaseDocument = (
   pathMap: Map<string, OpenAPIV3.PathItemObject>,
