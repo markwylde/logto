@@ -2,31 +2,31 @@ import { GoogleConnector, logtoGoogleOneTapCookieKey } from '@logto/connector-ki
 import { useLogto } from '@logto/react';
 import { ExtraParamsKey } from '@logto/schemas';
 import { conditional } from '@silverhand/essentials';
-import { useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useContext, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getCookie } from 'tiny-cookie';
 
 import AppLoading from '@/components/AppLoading';
 import { TenantsContext } from '@/contexts/TenantsProvider';
 import useRedirectUri from '@/hooks/use-redirect-uri';
 
+enum ExternalGoogleOneTapLandingSearchParams {
+  Credential = 'credential',
+}
 /** The external Google One Tap landing page for external website integration. */
 function ExternalGoogleOneTapLanding() {
   const navigate = useNavigate();
   const { isAuthenticated, signIn } = useLogto();
+  const [searchParams] = useSearchParams();
   const { navigateTenant } = useContext(TenantsContext);
   const redirectUri = useRedirectUri();
-  const [logtoGoogleOneTapCookie, setLogtoGoogleOneTapCookie] = useState<string>();
+
+  const credentialParam = searchParams.get(ExternalGoogleOneTapLandingSearchParams.Credential);
+  const cookieCredential = getCookie(logtoGoogleOneTapCookieKey) ?? undefined;
+  const credential = credentialParam ?? cookieCredential;
 
   useEffect(() => {
-    const cookieValue = getCookie(logtoGoogleOneTapCookieKey);
-    if (cookieValue) {
-      setLogtoGoogleOneTapCookie(cookieValue);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated || !credential) {
       // Navigate to root, which will handle tenant selection
       navigate('/', { replace: true });
       return;
@@ -45,14 +45,14 @@ function ExternalGoogleOneTapLanding() {
         target: GoogleConnector.target,
       },
       ...conditional(
-        logtoGoogleOneTapCookie && {
+        credential && {
           extraParams: {
-            [ExtraParamsKey.GoogleOneTapCredential]: logtoGoogleOneTapCookie,
+            [ExtraParamsKey.GoogleOneTapCredential]: credential,
           },
         }
       ),
     });
-  }, [isAuthenticated, navigate, navigateTenant, signIn, redirectUri, logtoGoogleOneTapCookie]);
+  }, [isAuthenticated, navigate, navigateTenant, signIn, redirectUri, credential]);
 
   return <AppLoading />;
 }

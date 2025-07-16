@@ -71,6 +71,10 @@ export enum ExtraParamsKey {
    * secrets that only the app can decrypt.
    */
   PublicKey = 'public_key',
+  /**
+   * The Google One Tap credential JWT token for external website integration.
+   */
+  GoogleOneTapCredential = 'google_one_tap_credential',
 }
 
 /** @deprecated Use {@link FirstScreen} instead. */
@@ -101,6 +105,7 @@ export const extraParamsObjectGuard = z
     [ExtraParamsKey.OneTimeToken]: z.string(),
     [ExtraParamsKey.GoogleOneTapCredential]: z.string(),
     [ExtraParamsKey.PublicKey]: z.string(),
+    [ExtraParamsKey.GoogleOneTapCredential]: z.string(),
   })
   .partial() satisfies ToZodObject<ExtraParamsObject>;
 
@@ -114,4 +119,5 @@ export type ExtraParamsObject = Partial<{
   [ExtraParamsKey.OneTimeToken]: string;
   [ExtraParamsKey.GoogleOneTapCredential]: string;
   [ExtraParamsKey.PublicKey]: string;
+  [ExtraParamsKey.GoogleOneTapCredential]: string;
 }>;
