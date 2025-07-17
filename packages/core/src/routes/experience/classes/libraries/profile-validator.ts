@@ -8,8 +8,8 @@ import {
   signInIdentifierKeyGuard,
   reservedCustomDataKeyGuard,
   builtInCustomProfileFieldKeys,
+  nameAndAvatarGuard,
 } from '@logto/schemas';
-import { z } from 'zod';
 
 import RequestError from '#src/errors/RequestError/index.js';
 import type Queries from '#src/tenants/Queries.js';
@@ -197,6 +197,35 @@ export class ProfileValidator {
     return missingProfile;
   }
 
+  public async hasMissingExtraProfileFields(profile: InteractionProfile, user?: User) {
+    const customProfileFields = await this.queries.customProfileFields.findAllCustomProfileFields();
+    const mandatoryCustomProfileFieldNames = customProfileFields
+      .filter(({ required }) => required)
+      .reduce((accumulator, currentField) => {
+        if (currentField.name === 'fullname') {
+          return [...accumulator, ...(currentField.config.parts?.map(({ key }) => key) ?? [])];
+        }
+        return [...accumulator, currentField.name];
+      }, new Array<string>());
+
+    for (const name of mandatoryCustomProfileFieldNames) {
+      const foundInUser =
+        this.hasField(user, name) ||
+        this.hasField(user?.profile, name) ||
+        this.hasField(user?.customData, name);
+      const foundInProfile =
+        this.hasField(profile, name) ||
+        this.hasField(profile.profile, name) ||
+        this.hasField(profile.customData, name);
+
+      if (!foundInUser && !foundInProfile) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Parse and split profile data into built-in and custom fields based on the provided keys.
    * @param values The profile data to parse
@@ -226,7 +255,7 @@ export class ProfileValidator {
       })
     );
 
-    const { name, avatar } = z.object({ name: z.string(), avatar: z.string() }).parse(values);
+    const { name, avatar } = nameAndAvatarGuard.parse(values);
     const profile = userProfileGuard.parse(values);
 
     const builtInProfileKeys = new Set<string>(builtInCustomProfileFieldKeys);
@@ -235,5 +264,14 @@ export class ProfileValidator {
     );
 
     return { name, avatar, profile, customData };
+  }
+
+  private hasField(object: unknown, field: string): boolean {
+    if (!object || typeof object !== 'object') {
+      return false;
+    }
+    return Object.entries(object).some(
+      ([key, value]) => key === field && value !== null && value !== undefined
+    );
   }
 }

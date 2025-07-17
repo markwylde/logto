@@ -186,10 +186,15 @@ export const updateProfileWithVerificationCode = async (
   return submitInteraction();
 };
 
-type UpdateProfilePayload = {
-  type: SignInIdentifier.Username | 'password';
-  value: string;
-};
+type UpdateProfilePayload =
+  | {
+      type: SignInIdentifier.Username | 'password';
+      value: string;
+    }
+  | {
+      type: 'extraProfile';
+      values: Record<string, unknown>;
+    };
 
 export const fulfillProfile = async (
   payload: UpdateProfilePayload,

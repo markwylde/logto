@@ -25,6 +25,7 @@ import emailAndPhoneRoutes from './email-and-phone.js';
 import identitiesRoutes from './identities.js';
 import mfaVerificationsRoutes from './mfa-verifications.js';
 import koaAccountCenter from './middlewares/koa-account-center.js';
+import thirdPartyTokensRoutes from './third-party-tokens.js';
 import { getAccountCenterFilteredProfile, getScopedProfile } from './utils/get-scoped-profile.js';
 
 export default function accountRoutes<T extends UserRouter>(...args: RouterInitArgs<T>) {
@@ -237,7 +238,10 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
         body: z.object({
           skipMfaOnSignIn: z.boolean(),
         }),
-        status: [204, 400, 401],
+        response: z.object({
+          skipMfaOnSignIn: z.boolean(),
+        }),
+        status: [200, 400, 401],
       }),
       async (ctx, next) => {
         const { id: userId, identityVerified, scopes } = ctx.auth;
@@ -272,7 +276,7 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
 
         ctx.appendDataHookContext('User.Data.Updated', { user: updatedUser });
 
-        ctx.status = 204;
+        ctx.body = { skipMfaOnSignIn };
 
         return next();
       }
@@ -343,6 +347,11 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
       return next();
     }
   );
+
+  // TODO: remove this when the third-party tokens feature is no longer experimental.
+  if (EnvSet.values.isDevFeaturesEnabled) {
+    thirdPartyTokensRoutes(...args);
+  }
 
   emailAndPhoneRoutes(...args);
   identitiesRoutes(...args);
