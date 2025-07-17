@@ -27,6 +27,7 @@ import { experienceRoutes } from './const.js';
 import { koaExperienceInteractionHooks } from './middleware/koa-experience-interaction-hooks.js';
 import koaExperienceInteraction from './middleware/koa-experience-interaction.js';
 import profileRoutes from './profile-routes.js';
+import secretRoutes from './secret-routes.js';
 import { type ExperienceInteractionRouterContext } from './types.js';
 import backupCodeVerificationRoutes from './verification-routes/backup-code-verification.js';
 import enterpriseSsoVerificationRoutes from './verification-routes/enterprise-sso-verification.js';
@@ -199,5 +200,6 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
   oneTimeTokenRoutes(experienceRouter, tenant);
 
   profileRoutes(experienceRouter, tenant);
+  secretRoutes(experienceRouter, tenant);
   experienceAnonymousRoutes(experienceRouter, tenant);
 }

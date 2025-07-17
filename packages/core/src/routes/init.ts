@@ -148,15 +148,7 @@ const createRouters = (tenant: TenantContext) => {
   });
 
   // The swagger.json should contain all API routers.
-  swaggerRoutes(anonymousRouter, [
-    managementRouter,
-    anonymousRouter,
-    logtoAnonymousRouter,
-    experienceRouter,
-    userRouter,
-    // TODO: interactionRouter should be removed from swagger.json
-    interactionRouter,
-  ]);
+  swaggerRoutes(anonymousRouter, [managementRouter, anonymousRouter, logtoAnonymousRouter]);
 
   return [
     experienceRouter,

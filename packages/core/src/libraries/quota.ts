@@ -23,13 +23,25 @@ import { type ConnectorLibrary } from './connector.js';
 const paidReservedPlans = new Set<string>([ReservedPlanId.Pro, ReservedPlanId.Pro202411]);
 
 export class QuotaLibrary {
-  constructor(
-    public readonly tenantId: string,
-    public readonly queries: Queries,
-    public readonly connectorLibrary: ConnectorLibrary,
-    private readonly cloudConnection: CloudConnectionLibrary,
-    private readonly subscription: SubscriptionLibrary
-  ) {}
+  public readonly tenantId: string;
+  public readonly queries: Queries;
+  public readonly connectorLibrary: ConnectorLibrary;
+  private readonly cloudConnection: CloudConnectionLibrary;
+  private readonly subscription: SubscriptionLibrary;
+
+  constructor(options: {
+    tenantId: string;
+    queries: Queries;
+    connectorLibrary: ConnectorLibrary;
+    cloudConnection: CloudConnectionLibrary;
+    subscription: SubscriptionLibrary;
+  }) {
+    this.tenantId = options.tenantId;
+    this.queries = options.queries;
+    this.connectorLibrary = options.connectorLibrary;
+    this.cloudConnection = options.cloudConnection;
+    this.subscription = options.subscription;
+  }
 
   guardTenantUsageByKey = async (key: keyof SubscriptionUsage) => {
     const { isCloud } = EnvSet.values;
