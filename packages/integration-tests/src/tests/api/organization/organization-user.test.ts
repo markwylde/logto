@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import assert from 'node:assert';
 
 import { RoleType } from '@logto/schemas';
@@ -26,6 +27,7 @@ describe('organization user APIs', () => {
         organization.id,
         createdUsers.map((user) => user.id)
       );
+    });
     });
 
     afterAll(async () => {
@@ -477,3 +479,4 @@ describe('organization user APIs', () => {
     });
   });
 });
+/* eslint-enable max-lines */

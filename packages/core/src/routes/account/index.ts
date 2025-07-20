@@ -25,6 +25,7 @@ import emailAndPhoneRoutes from './email-and-phone.js';
 import identitiesRoutes from './identities.js';
 import mfaVerificationsRoutes from './mfa-verifications.js';
 import koaAccountCenter from './middlewares/koa-account-center.js';
+import passwordRoutes from './password-routes.js';
 import thirdPartyTokensRoutes from './third-party-tokens.js';
 import { getAccountCenterFilteredProfile, getScopedProfile } from './utils/get-scoped-profile.js';
 
@@ -36,7 +37,7 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
   } = queries;
 
   const {
-    users: { checkIdentifierCollision },
+    users: { checkIdentifierCollision, verifyUserPassword },
   } = libraries;
 
   router.use(koaAccountCenter(queries));
@@ -284,6 +285,7 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
   }
 
   thirdPartyTokensRoutes(...args);
+  passwordRoutes(...args);
   emailAndPhoneRoutes(...args);
   identitiesRoutes(...args);
   mfaVerificationsRoutes(...args);
