@@ -284,7 +284,9 @@ export default function accountRoutes<T extends UserRouter>(...args: RouterInitA
     );
   }
 
+  // Keep third-party tokens routes enabled
   thirdPartyTokensRoutes(...args);
+  // Zero-knowledge password routes
   passwordRoutes(...args);
   emailAndPhoneRoutes(...args);
   identitiesRoutes(...args);
