@@ -222,11 +222,13 @@ export const createSocialLibrary = (queries: Queries, connectorLibrary: Connecto
       })
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const {
       metadata: { isTokenStorageSupported },
       dbEntry: { enableTokenStorage },
       getAccessTokenByRefreshToken,
-    } = connector;
+      // eslint-disable-next-line no-restricted-syntax, @typescript-eslint/no-explicit-any
+    } = connector as any;
 
     assertThat(
       isTokenStorageSupported && enableTokenStorage && getAccessTokenByRefreshToken,
@@ -236,9 +238,11 @@ export const createSocialLibrary = (queries: Queries, connectorLibrary: Connecto
       })
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     const tokenResponse = await getAccessTokenByRefreshToken(refreshToken);
 
     assertThat(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       isValidAccessTokenResponse(tokenResponse),
       new RequestError('connector.invalid_response')
     );

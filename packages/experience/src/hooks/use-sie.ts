@@ -122,6 +122,7 @@ export const useSieMethods = (): UseSieMethodsReturnType => {
     [
       signUpMethods,
       signInMethods,
+      secondaryIdentifiers,
       experienceSettings,
       passwordRequiredForSignUp,
       isVerificationCodeEnabledForSignUp,
