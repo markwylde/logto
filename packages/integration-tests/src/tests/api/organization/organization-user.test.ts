@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import assert from 'node:assert';
 
 import { RoleType } from '@logto/schemas';
@@ -14,14 +15,33 @@ describe('organization user APIs', () => {
 
     beforeAll(async () => {
       const organization = await organizationApi.create({ name: 'test' });
-      const createdUsers = await Promise.all(
-        Array.from({ length: 30 }).map(async () => userApi.create({ username: generateTestName() }))
-      );
-      await organizationApi.addUsers(
-        organization.id,
-        createdUsers.map((user) => user.id)
-      );
-    });
+      // Create users in smaller batches to avoid potential timeouts
+      const userBatches = await Promise.all([
+        Promise.all(
+          Array.from({ length: 10 }).map(async () =>
+            userApi.create({ username: generateTestName() })
+          )
+        ),
+        Promise.all(
+          Array.from({ length: 10 }).map(async () =>
+            userApi.create({ username: generateTestName() })
+          )
+        ),
+        Promise.all(
+          Array.from({ length: 10 }).map(async () =>
+            userApi.create({ username: generateTestName() })
+          )
+        ),
+      ]);
+      const createdUsers = userBatches.flat();
+      // Add users in smaller batches
+      const userIds = createdUsers.map((user) => user.id);
+      await Promise.all([
+        organizationApi.addUsers(organization.id, userIds.slice(0, 10)),
+        organizationApi.addUsers(organization.id, userIds.slice(10, 20)),
+        organizationApi.addUsers(organization.id, userIds.slice(20, 30)),
+      ]);
+    }, 120_000); // Increase timeout for beforeAll
 
     afterAll(async () => {
       await Promise.all([organizationApi.cleanUp(), userApi.cleanUp()]);
@@ -472,3 +492,4 @@ describe('organization user APIs', () => {
     });
   });
 });
+/* eslint-enable max-lines */

@@ -93,11 +93,16 @@ const validateFieldName = (name: string) => {
   assertThat(/^[\dA-Za-z]+$/.test(name), 'custom_profile_fields.invalid_name');
   assertThat(
     !new Set<string>(reservedCustomDataKeys).has(name),
-    new RequestError({ code: 'custom_profile_fields.name_conflict_custom_data', name })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, no-restricted-syntax, @typescript-eslint/no-explicit-any
+    new RequestError({ code: 'custom_profile_fields.name_conflict_custom_data' as any, name })
   );
   assertThat(
     !new Set<string>(reservedSignInIdentifierKeys).has(name),
-    new RequestError({ code: 'custom_profile_fields.name_conflict_sign_in_identifier', name })
+    new RequestError({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, no-restricted-syntax, @typescript-eslint/no-explicit-any
+      code: 'custom_profile_fields.name_conflict_sign_in_identifier' as any,
+      name,
+    })
   );
 };
 
