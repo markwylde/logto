@@ -34,6 +34,7 @@ import {
   signInAndGetUserApi,
 } from '#src/helpers/profile.js';
 import { enableAllPasswordSignInMethods } from '#src/helpers/sign-in-experience.js';
+import { devFeatureTest } from '#src/utils.js';
 
 describe('my-account (social)', () => {
   const state = 'fake_state';
@@ -278,7 +279,7 @@ describe('my-account (social)', () => {
     });
   });
 
-  describe('/my-account/identities/:target/access-token', () => {
+  devFeatureTest.describe('/my-account/identities/:target/access-token', () => {
     it('should update user identities and get access token', async () => {
       const socialIdentityId = generateStandardId();
       const { user, username, password } = await createDefaultTenantUserWithPassword();

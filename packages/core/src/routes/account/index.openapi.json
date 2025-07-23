@@ -574,6 +574,7 @@
       },
       "put": {
         "operationId": "UpdateSocialIdentityAccessTokenByVerificationId",
+        "tags": ["Dev feature"],
         "summary": "Update the access token for a social identity by verification ID",
         "description": "This API updates the token storage for a social identity by a given social verification ID. \nIt is used to fetch a new access token from the social provider and store it securely in Logto.",
         "responses": {
