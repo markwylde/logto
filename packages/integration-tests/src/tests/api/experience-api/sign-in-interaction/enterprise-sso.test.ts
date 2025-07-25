@@ -70,15 +70,17 @@ describe('enterprise sso sign-in and sign-up', () => {
     const { primaryEmail } = await getUser(userId);
     expect(primaryEmail).toBe(email);
 
-    const { ssoIdentity, tokenSecret } = await getUserSsoIdentity(
-      userId,
-      ssoConnectorApi.firstConnectorId
-    );
+    if (isDevFeaturesEnabled) {
+      const { ssoIdentity, tokenSecret } = await getUserSsoIdentity(
+        userId,
+        ssoConnectorApi.firstConnectorId
+      );
 
-    expect(ssoIdentity.identityId).toBe(enterpriseSsoIdentityId);
-    expect(tokenSecret?.identityId).toBe(enterpriseSsoIdentityId);
-    expect(tokenSecret?.ssoConnectorId).toBe(ssoConnectorApi.firstConnectorId);
-    expect(tokenSecret?.metadata.scope).toBe(mockTokenResponse.scope);
+      expect(ssoIdentity.identityId).toBe(enterpriseSsoIdentityId);
+      expect(tokenSecret?.identityId).toBe(enterpriseSsoIdentityId);
+      expect(tokenSecret?.ssoConnectorId).toBe(ssoConnectorApi.firstConnectorId);
+      expect(tokenSecret?.metadata.scope).toBe(mockTokenResponse.scope);
+    }
 
     await signInWithEnterpriseSso(ssoConnectorApi.firstConnectorId, {
       sub: enterpriseSsoIdentityId,
@@ -95,22 +97,23 @@ describe('enterprise sso sign-in and sign-up', () => {
     expect(name).toBe('John Doe');
 
     // Should update the token set
-    const { tokenSecret: updatedTokenSecret } = await getUserSsoIdentity(
-      userId,
-      ssoConnectorApi.firstConnectorId
-    );
-    expect(updatedTokenSecret?.metadata.scope).toBe('openid profile email');
+    if (isDevFeaturesEnabled) {
+      const { tokenSecret } = await getUserSsoIdentity(userId, ssoConnectorApi.firstConnectorId);
+      expect(tokenSecret?.metadata.scope).toBe('openid profile email');
+    }
 
     // Should delete the token set when the connector token storage is disabled
-    await ssoConnectorApi.update(ssoConnectorApi.firstConnectorId, {
-      enableTokenStorage: false,
-    });
+    if (isDevFeaturesEnabled) {
+      await ssoConnectorApi.update(ssoConnectorApi.firstConnectorId, {
+        enableTokenStorage: false,
+      });
 
-    const { tokenSecret: deletedTokenSecret } = await getUserSsoIdentity(
-      userId,
-      ssoConnectorApi.firstConnectorId
-    );
-    expect(deletedTokenSecret).toBeUndefined();
+      const { tokenSecret: updatedTokenSecret } = await getUserSsoIdentity(
+        userId,
+        ssoConnectorApi.firstConnectorId
+      );
+      expect(updatedTokenSecret).toBeUndefined();
+    }
 
     await deleteUser(userId);
   });

@@ -314,6 +314,8 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
       }
 
       if (
+        // TODO: remove this check once the feature is enabled in production.
+        EnvSet.values.isDevFeaturesEnabled &&
         type === ConnectorType.Social &&
         originalMetadata.isTokenStorageSupported &&
         enableTokenStorage === false

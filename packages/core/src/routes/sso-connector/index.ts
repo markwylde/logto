@@ -139,6 +139,13 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
           providerType === SsoProviderType.OIDC,
           new RequestError('connector.token_storage_not_supported')
         );
+
+        // Only OIDC connector supports token storage currently.
+        const { providerType } = ssoConnectorFactories[providerName];
+        assertThat(
+          providerType === SsoProviderType.OIDC,
+          new RequestError('connector.token_storage_not_supported')
+        );
       }
 
       const connector = await ssoConnectors.insert({
@@ -302,7 +309,6 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
             status: 422,
           })
         );
-
         // Only OIDC connector supports token storage currently.
         assertThat(
           providerType === SsoProviderType.OIDC,
@@ -311,7 +317,12 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
       }
 
       // Delete the token secret if the token storage is disabled
-      if (rest.enableTokenStorage === false && providerType === SsoProviderType.OIDC) {
+      if (
+        // TODO: remove this check once the feature is enabled in production.
+        EnvSet.values.isDevFeaturesEnabled &&
+        rest.enableTokenStorage === false &&
+        providerType === SsoProviderType.OIDC
+      ) {
         await secrets.deleteTokenSetSecretsByEnterpriseSsoConnectorId(id);
       }
 

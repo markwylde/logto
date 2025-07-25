@@ -173,6 +173,19 @@ describe('social sign-in and sign-up', () => {
     );
     expect(updatedTokenSecret).toBeUndefined();
 
+    // Should delete the token set when the connector token storage is disabled
+    if (isDevFeaturesEnabled) {
+      await updateConnectorConfig(connectorId, {
+        enableTokenStorage: false,
+      });
+
+      const { tokenSecret: updatedTokenSecret } = await getUserIdentity(
+        userId,
+        mockSocialConnectorTarget
+      );
+      expect(updatedTokenSecret).toBeUndefined();
+    }
+
     await deleteUser(userId);
   });
 });
