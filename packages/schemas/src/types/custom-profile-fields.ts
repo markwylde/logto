@@ -335,13 +335,12 @@ export const reservedBuiltInProfileKeys = Object.freeze(
   reservedBuiltInProfileKeyGuard.keyof().options
 );
 
-export enum SupportedDateFormat {
+export enum supportedDateFormat {
   US = 'MM/dd/yyyy',
   UK = 'dd/MM/yyyy',
   ISO = 'yyyy-MM-dd',
   Custom = 'custom',
 }
-
 export enum Gender {
   Female = 'female',
   Male = 'male',

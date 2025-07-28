@@ -43,7 +43,11 @@ const ExtraProfileForm = ({ customProfileFields, defaultValues, onSubmit }: Prop
           if (field.type === CustomProfileFieldType.Fullname) {
             return <FullnameSubForm key={field.name} field={field} />;
           }
+<<<<<<< HEAD
           const { name, type, label, description, required } = field;
+=======
+          const { name, type, label, description } = field;
+>>>>>>> 70af59d3d (refactor(schemas,experience): extend composition parts to support full profile field configs)
           return (
             <Controller
               key={name}

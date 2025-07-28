@@ -14,7 +14,7 @@ type Props = {
 };
 
 const getDefaultParts = (parts?: FieldPart[]) =>
-  Object.fromEntries(parts?.map(({ name, config }) => [name, config?.defaultValue ?? '']) ?? []);
+  Object.fromEntries(parts?.map(({ name }) => [name, '']) ?? []);
 
 const SetExtraProfile = ({ interactionEvent }: Props) => {
   const { experienceSettings } = useContext(PageContext);
@@ -29,7 +29,7 @@ const SetExtraProfile = ({ interactionEvent }: Props) => {
         if (type === CustomProfileFieldType.Fullname) {
           return { ...accumulator, ...getDefaultParts(config.parts) };
         }
-        return { ...accumulator, [name]: config.defaultValue ?? '' };
+        return { ...accumulator, [name]: '' };
       },
       {} satisfies Record<string, unknown>
     );
