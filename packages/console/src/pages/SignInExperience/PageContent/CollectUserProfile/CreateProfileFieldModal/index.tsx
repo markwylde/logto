@@ -11,7 +11,6 @@ import Modal from 'react-modal';
 
 import ContactUsPhraseLink from '@/components/ContactUsPhraseLink';
 import QuotaGuardFooter from '@/components/QuotaGuardFooter';
-import { isCloud } from '@/consts/env';
 import { latestProPlanId } from '@/consts/subscriptions';
 import { SubscriptionDataContext } from '@/contexts/SubscriptionDataProvider';
 import Button from '@/ds-components/Button';
@@ -222,7 +221,7 @@ function CreateProfileFieldModal({ existingFieldNames, onClose }: Props) {
           </FormField>
         )}
         {errorMessage && <div className={styles.errorMessage}>{errorMessage}</div>}
-        {!collectUserProfileEnabled && isCloud && (
+        {!collectUserProfileEnabled && (
           <QuotaGuardFooter>
             <Trans
               components={{
@@ -233,7 +232,7 @@ function CreateProfileFieldModal({ existingFieldNames, onClose }: Props) {
             </Trans>
           </QuotaGuardFooter>
         )}
-        {(collectUserProfileEnabled || !isCloud) && (
+        {collectUserProfileEnabled && (
           <div className={styles.buttonWrapper}>
             <Button
               size="large"
