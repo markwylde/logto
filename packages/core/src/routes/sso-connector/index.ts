@@ -125,6 +125,7 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
       }
 
       if (rest.enableTokenStorage) {
+<<<<<<< HEAD
         assertThat(
           EnvSet.values.secretVaultKek,
           new RequestError({
@@ -140,6 +141,8 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
           new RequestError('connector.token_storage_not_supported')
         );
 
+=======
+>>>>>>> aab1f74a0 (refactor(core): remove token storage dev feature guard on core (#7626))
         // Only OIDC connector supports token storage currently.
         const { providerType } = ssoConnectorFactories[providerName];
         assertThat(
@@ -302,13 +305,6 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
       }
 
       if (rest.enableTokenStorage) {
-        assertThat(
-          EnvSet.values.secretVaultKek,
-          new RequestError({
-            code: 'request.feature_not_supported',
-            status: 422,
-          })
-        );
         // Only OIDC connector supports token storage currently.
         assertThat(
           providerType === SsoProviderType.OIDC,
@@ -317,12 +313,7 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
       }
 
       // Delete the token secret if the token storage is disabled
-      if (
-        // TODO: remove this check once the feature is enabled in production.
-        EnvSet.values.isDevFeaturesEnabled &&
-        rest.enableTokenStorage === false &&
-        providerType === SsoProviderType.OIDC
-      ) {
+      if (rest.enableTokenStorage === false && providerType === SsoProviderType.OIDC) {
         await secrets.deleteTokenSetSecretsByEnterpriseSsoConnectorId(id);
       }
 

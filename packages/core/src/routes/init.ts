@@ -113,7 +113,11 @@ const createRouters = (tenant: TenantContext) => {
   oneTimeTokenRoutes(managementRouter, tenant);
   captchaProviderRoutes(managementRouter, tenant);
   sentinelActivitiesRoutes(managementRouter, tenant);
+<<<<<<< HEAD
   customProfileFieldsRoutes(managementRouter, tenant);
+=======
+  customProfileFieldsRoutes(managementRouter, tenant);
+>>>>>>> aab1f74a0 (refactor(core): remove token storage dev feature guard on core (#7626))
   secretsRoutes(managementRouter, tenant);
 
   // General anonymous router for publicly accessible APIs
