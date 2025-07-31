@@ -17,10 +17,9 @@ enum ExternalGoogleOneTapLandingSearchParams {
 function ExternalGoogleOneTapLanding() {
   const navigate = useNavigate();
   const { isAuthenticated, signIn } = useLogto();
-  const [searchParams] = useSearchParams();
   const { navigateTenant } = useContext(TenantsContext);
   const redirectUri = useRedirectUri();
-
+  const [searchParams] = useSearchParams();
   const credentialParam = searchParams.get(ExternalGoogleOneTapLandingSearchParams.Credential);
   const cookieCredential = getCookie(logtoGoogleOneTapCookieKey) ?? undefined;
   const credential = credentialParam ?? cookieCredential;

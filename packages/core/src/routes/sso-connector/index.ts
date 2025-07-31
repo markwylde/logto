@@ -125,24 +125,6 @@ export default function singleSignOnConnectorsRoutes<T extends ManagementApiRout
       }
 
       if (rest.enableTokenStorage) {
-<<<<<<< HEAD
-        assertThat(
-          EnvSet.values.secretVaultKek,
-          new RequestError({
-            code: 'request.feature_not_supported',
-            status: 422,
-          })
-        );
-
-        // Only OIDC connector supports token storage currently.
-        const { providerType } = ssoConnectorFactories[providerName];
-        assertThat(
-          providerType === SsoProviderType.OIDC,
-          new RequestError('connector.token_storage_not_supported')
-        );
-
-=======
->>>>>>> aab1f74a0 (refactor(core): remove token storage dev feature guard on core (#7626))
         // Only OIDC connector supports token storage currently.
         const { providerType } = ssoConnectorFactories[providerName];
         assertThat(
