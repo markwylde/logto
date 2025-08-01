@@ -16,7 +16,7 @@ describe('organization user APIs', () => {
     beforeAll(async () => {
       const organization = await organizationApi.create({ name: 'test' });
       // Create users sequentially to avoid database connection pool exhaustion
-      const createdUsers = [];
+      const createdUsers = [] as Array<{ id: string }>;
       for (const _index of Array.from({ length: 30 })) {
         // eslint-disable-next-line no-await-in-loop
         const user = await userApi.create({ username: generateTestName() });
@@ -27,7 +27,6 @@ describe('organization user APIs', () => {
         organization.id,
         createdUsers.map((user) => user.id)
       );
-    });
     });
 
     afterAll(async () => {
