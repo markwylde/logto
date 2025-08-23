@@ -1,4 +1,4 @@
-import { SupportedDateFormat } from '@logto/schemas';
+import { supportedDateFormat } from '@logto/schemas';
 import { cond, condString } from '@silverhand/essentials';
 import classNames from 'classnames';
 import type { FormEventHandler, KeyboardEventHandler, ClipboardEventHandler } from 'react';
@@ -41,11 +41,11 @@ const getDefaultInputSize = (digit = 4) => digit + 1;
 const isNumeric = (char: string) => /^\d+$/.test(char);
 
 const getDateFormatConfig = (format: string): DateFormatConfig | undefined => {
-  if (format === SupportedDateFormat.Custom) {
+  if (format === supportedDateFormat.Custom) {
     return;
   }
 
-  const separator = format === SupportedDateFormat.ISO ? '-' : '/';
+  const separator = format === supportedDateFormat.ISO ? '-' : '/';
   const parts = format.split(separator);
 
   return {
@@ -78,9 +78,9 @@ const DateField = (props: Props) => {
   const inputReferences = useRef<Array<HTMLInputElement | undefined>>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const isSupportedDateFormat =
-    dateFormat === SupportedDateFormat.US ||
-    dateFormat === SupportedDateFormat.UK ||
-    dateFormat === SupportedDateFormat.ISO;
+    dateFormat === supportedDateFormat.US ||
+    dateFormat === supportedDateFormat.UK ||
+    dateFormat === supportedDateFormat.ISO;
 
   const formatConfig = useMemo(() => {
     if (!isSupportedDateFormat) {

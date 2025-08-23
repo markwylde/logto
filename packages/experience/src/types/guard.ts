@@ -204,29 +204,18 @@ export const addressFieldValueGuard = s.optional(
 
 const profileFieldTypeGuard = s.enums(Object.values(CustomProfileFieldType));
 
-<<<<<<< HEAD
 const dateFormatEnumGuard = s.enums(Object.values(supportedDateFormat));
 
 export const dateFieldConfigGuard = s.object({
   format: dateFormatEnumGuard,
   placeholder: s.optional(s.string()),
-=======
-const dateFormatEnumGuard = s.enums(Object.values(supportedDateFormat));
-
-export const dateFieldConfigGuard = s.object({
-  format: dateFormatEnumGuard,
->>>>>>> 70af59d3d (refactor(schemas,experience): extend composition parts to support full profile field configs)
   customFormat: s.optional(s.string()),
 });
 
 const baseConfigPartGuard = s.object({
   enabled: s.boolean(),
   type: profileFieldTypeGuard,
-<<<<<<< HEAD
   label: s.optional(s.string()),
-=======
-  label: s.string(),
->>>>>>> 70af59d3d (refactor(schemas,experience): extend composition parts to support full profile field configs)
   description: s.optional(s.string()),
   required: s.boolean(),
   config: s.optional(
@@ -236,16 +225,13 @@ const baseConfigPartGuard = s.object({
       maxLength: s.optional(s.number()),
       minValue: s.optional(s.number()),
       maxValue: s.optional(s.number()),
-<<<<<<< HEAD
-      options: s.optional(s.array(s.object({ value: s.string(), label: s.optional(s.string()) }))),
+      options: s.optional(
+        s.array(
+          s.object({ value: s.string(), label: s.optional(s.string()) })
+        )
+      ),
       format: s.optional(s.string()),
       customFormat: s.optional(s.string()),
-      defaultValue: s.optional(s.string()),
-=======
-      options: s.optional(s.array(s.object({ value: s.string(), label: s.string() }))),
-      format: s.optional(s.string()),
-      customFormat: s.optional(s.string()),
->>>>>>> 70af59d3d (refactor(schemas,experience): extend composition parts to support full profile field configs)
     })
   ),
 });

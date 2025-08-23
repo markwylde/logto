@@ -1,0 +1,85 @@
+ WARN  Unsupported engine: wanted: {"node":"^22.14.0"} (current: {"node":"v24.6.0","pnpm":"10.15.0"})
+
+> @logto/experience@1.14.0 build /Users/markwylde/Documents/Projects/logto/packages/experience
+> vite build
+
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+vite v6.2.7 building for production...
+transforming...
+✓ 2506 modules transformed.
+Generated an empty chunk: "phrases-ar".
+Generated an empty chunk: "phrases-de".
+Generated an empty chunk: "phrases-es".
+Generated an empty chunk: "phrases-fr".
+Generated an empty chunk: "phrases-it".
+Generated an empty chunk: "phrases-ja".
+Generated an empty chunk: "phrases-ko".
+Generated an empty chunk: "phrases-pl-pl".
+Generated an empty chunk: "phrases-pt-br".
+Generated an empty chunk: "phrases-pt-pt".
+Generated an empty chunk: "phrases-ru".
+Generated an empty chunk: "phrases-tr-tr".
+Generated an empty chunk: "phrases-uk-ua".
+Generated an empty chunk: "phrases-zh-cn".
+Generated an empty chunk: "phrases-zh-hk".
+Generated an empty chunk: "phrases-zh-tw".
+rendering chunks...
+computing gzip size...
+dist/index.html                              1.11 kB │ gzip:   0.50 kB
+dist/assets/apple-touch-icon-C1ak-PnC.png   83.87 kB
+dist/assets/vendors-B73veG7L.css             9.72 kB │ gzip:   1.93 kB
+dist/assets/index-DarfThIe.css              54.51 kB │ gzip:  10.41 kB
+dist/assets/phrases-ar-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-de-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-es-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-fr-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-it-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-ja-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-ko-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-ru-l0sNRNKZ.js           0.05 kB │ gzip:   0.07 kB │ map:     0.10 kB
+dist/assets/phrases-pl-pl-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-pt-br-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-pt-pt-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-tr-tr-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-uk-ua-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-zh-cn-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-zh-hk-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-zh-tw-l0sNRNKZ.js        0.05 kB │ gzip:   0.07 kB │ map:     0.11 kB
+dist/assets/phrases-en-C9Cfm3n5.js          14.39 kB │ gzip:   4.39 kB │ map:    22.49 kB
+dist/assets/i18next-BJly4Vx5.js             61.80 kB │ gzip:  16.95 kB │ map:   203.95 kB
+dist/assets/libphonenumber-js-DZoXvTe2.js  216.37 kB │ gzip:  53.73 kB │ map:   541.89 kB
+dist/assets/core-js-CWWMlaTy.js            226.70 kB │ gzip:  83.07 kB │ map: 1,183.46 kB
+dist/assets/react-BseoQ6gr.js              298.73 kB │ gzip:  98.84 kB │ map: 1,100.53 kB
+dist/assets/vendors-B60ZStYD.js            298.75 kB │ gzip:  81.00 kB │ map: 1,413.25 kB
+dist/assets/index-DUKfsu4u.js              397.94 kB │ gzip: 103.95 kB │ map: 1,401.84 kB
+✓ built in 2.81s
+
+✨ [vite-plugin-compression]:algorithm=gzip - compressed file successfully: 
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/phrases-en-C9Cfm3n5.js.gz          14.05kb / gzip: 4.28kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/index-DarfThIe.css.gz              53.23kb / gzip: 10.13kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/vendors-B73veG7L.css.gz            9.49kb / gzip: 1.87kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/index.html.gz                             1.09kb / gzip: 0.49kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/i18next-BJly4Vx5.js.gz             60.35kb / gzip: 16.50kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/libphonenumber-js-DZoXvTe2.js.gz   211.30kb / gzip: 51.84kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/vendors-B60ZStYD.js.gz             291.75kb / gzip: 78.99kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/core-js-CWWMlaTy.js.gz             221.39kb / gzip: 80.90kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/index-DUKfsu4u.js.gz               388.61kb / gzip: 101.30kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/react-BseoQ6gr.js.gz               291.73kb / gzip: 96.39kb
+
+
+
+✨ [vite-plugin-compression]:algorithm=brotliCompress - compressed file successfully: 
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/phrases-en-C9Cfm3n5.js.br          14.05kb / brotliCompress: 3.64kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/i18next-BJly4Vx5.js.br             60.35kb / brotliCompress: 14.79kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/vendors-B73veG7L.css.br            9.49kb / brotliCompress: 1.61kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/index.html.br                             1.09kb / brotliCompress: 0.35kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/index-DarfThIe.css.br              53.23kb / brotliCompress: 8.92kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/libphonenumber-js-DZoXvTe2.js.br   211.30kb / brotliCompress: 31.42kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/core-js-CWWMlaTy.js.br             221.39kb / brotliCompress: 67.05kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/react-BseoQ6gr.js.br               291.73kb / brotliCompress: 83.96kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/vendors-B60ZStYD.js.br             291.75kb / brotliCompress: 67.04kb
+dist//Users/markwylde/Documents/Projects/logto/packages/experience/assets/index-DUKfsu4u.js.br               388.61kb / brotliCompress: 80.17kb
+
+
