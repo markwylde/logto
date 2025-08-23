@@ -59,7 +59,7 @@ const newAddedReportableUsageKeys = Object.freeze([
 ] satisfies Array<keyof SubscriptionQuota>);
 
 // Have to manually define this variable since we can only get the literal union from the @logto/cloud/routes module.
-export const allReportSubscriptionUpdatesUsageKeys = Object.freeze([
+const baseReportableKeys = Object.freeze([
   'machineToMachineLimit',
   'resourcesLimit',
   'mfaEnabled',
@@ -68,9 +68,13 @@ export const allReportSubscriptionUpdatesUsageKeys = Object.freeze([
   'enterpriseSsoLimit',
   'hooksLimit',
   'securityFeaturesEnabled',
+] as const);
+
+export const allReportSubscriptionUpdatesUsageKeys = Object.freeze([
+  ...baseReportableKeys,
   // TODO: Remove this dev feature guard once new pro plan is ready for production
   ...(conditional(EnvSet.values.isDevFeaturesEnabled && newAddedReportableUsageKeys) ?? []),
-]) satisfies readonly ReportSubscriptionUpdatesUsageKey[];
+]);
 
 const subscriptionStatusGuard = z.enum([
   'incomplete',

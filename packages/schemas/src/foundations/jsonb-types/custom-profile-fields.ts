@@ -35,6 +35,8 @@ export const baseConfigGuard = z.object({
   format: z.string().max(128).optional(),
   customFormat: z.string().max(128).optional(),
   options: fieldOptionsGuard.optional(),
+  // Optional default value used by Checkbox profile field
+  defaultValue: z.union([z.literal('true'), z.literal('false')]).optional(),
 });
 
 export const fieldPartGuard = z.object({

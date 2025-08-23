@@ -201,19 +201,19 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
       const { oldPassword, newPassword, encryptedSecret } = guard.body;
 
       // Get the user
-      const user = await tenant.queries.users.findUserById(identifiedUserId);
+      const user = await queries.users.findUserById(identifiedUserId);
 
       // Both passwords are already server portions (pre-split by client)
 
       // Verify the old password is correct
-      await tenant.libraries.users.verifyUserPassword(user, oldPassword);
+      await libraries.users.verifyUserPassword(user, oldPassword);
 
       // Encrypt the new server password
       const { passwordEncrypted, passwordEncryptionMethod } =
         await encryptUserPassword(newPassword);
 
       // Update user with new password and optionally new encrypted secret
-      await tenant.queries.users.updateUserById(identifiedUserId, {
+      await queries.users.updateUserById(identifiedUserId, {
         passwordEncrypted,
         passwordEncryptionMethod,
         ...(encryptedSecret && { encryptedSecret }),
@@ -361,7 +361,7 @@ export default function interactionProfileRoutes<T extends ExperienceInteraction
         })
       );
 
-      const user = await tenant.queries.users.findUserById(identifiedUserId);
+      const user = await queries.users.findUserById(identifiedUserId);
 
       ctx.body = {
         encryptedSecret: user.encryptedSecret,

@@ -89,6 +89,8 @@ export type SanitizedVerificationRecordData =
   | PasswordVerificationRecordData
   | CodeVerificationRecordData<VerificationType.EmailVerificationCode>
   | CodeVerificationRecordData<VerificationType.PhoneVerificationCode>
+  | CodeVerificationRecordData<VerificationType.MfaEmailVerificationCode>
+  | CodeVerificationRecordData<VerificationType.MfaPhoneVerificationCode>
   | SanitizedSocialVerificationRecordData
   | SanitizedEnterpriseSsoVerificationRecordData
   | SanitizedTotpVerificationRecordData
