@@ -72,9 +72,11 @@ function CompositionPartsSelector() {
                 title={
                   <DangerousRaw>
                     <div className={styles.titleWithTip}>
-                      {t('sign_in_exp.custom_profile_fields.details.components')}
+                      {t('sign_in_exp.custom_profile_fields.details.composition_parts')}
                       <ToggleTip
-                        content={t('sign_in_exp.custom_profile_fields.details.components_tip')}
+                        content={t(
+                          'sign_in_exp.custom_profile_fields.details.composition_parts_tip'
+                        )}
                         horizontalAlign="start"
                       >
                         <IconButton size="small">

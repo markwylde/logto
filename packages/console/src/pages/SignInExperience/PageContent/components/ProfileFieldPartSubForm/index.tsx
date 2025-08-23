@@ -157,10 +157,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
         </FormField>
       )}
       {type !== CustomProfileFieldType.Checkbox && (
-        <FormField
-          title="sign_in_exp.custom_profile_fields.details.description"
-          tip={t('sign_in_exp.custom_profile_fields.details.description_tooltip')}
-        >
+        <FormField title="sign_in_exp.custom_profile_fields.details.description">
           <TextInput
             {...register(`${fieldPrefix}description`)}
             error={formErrors?.description?.message}
@@ -177,7 +174,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
               }),
             })}
             error={formErrors?.options?.message}
-            description={t('sign_in_exp.custom_profile_fields.details.options_tip')}
+            description={`${t('sign_in_exp.custom_profile_fields.details.options_tip')}`}
             placeholder={t('sign_in_exp.custom_profile_fields.details.options_placeholder')}
             rows={5}
           />
