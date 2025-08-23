@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Tip from '@/assets/icons/tip.svg?react';
 import { CheckboxGroup } from '@/ds-components/Checkbox';
 import DangerousRaw from '@/ds-components/DangerousRaw';
+import DynamicT from '@/ds-components/DynamicT';
 import FormField from '@/ds-components/FormField';
 import IconButton from '@/ds-components/IconButton';
 import Select from '@/ds-components/Select';
@@ -72,11 +73,11 @@ function CompositionPartsSelector() {
                 title={
                   <DangerousRaw>
                     <div className={styles.titleWithTip}>
-                      {t('sign_in_exp.custom_profile_fields.details.composition_parts')}
+                      <DynamicT forKey="sign_in_exp.custom_profile_fields.details.composition_parts" />
                       <ToggleTip
-                        content={t(
-                          'sign_in_exp.custom_profile_fields.details.composition_parts_tip'
-                        )}
+                        content={
+                          <DynamicT forKey="sign_in_exp.custom_profile_fields.details.composition_parts_tip" />
+                        }
                         horizontalAlign="start"
                       >
                         <IconButton size="small">
