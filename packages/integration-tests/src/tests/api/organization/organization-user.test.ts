@@ -1,4 +1,4 @@
-/* eslint-disable max-lines */
+// Note: keep tests readable; do not artificially split to satisfy max-lines.
 import assert from 'node:assert';
 
 import { RoleType } from '@logto/schemas';
