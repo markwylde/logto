@@ -139,14 +139,6 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
 
       if (enableTokenStorage) {
         assertThat(
-          EnvSet.values.secretVaultKek,
-          new RequestError({
-            code: 'request.feature_not_supported',
-            status: 422,
-          })
-        );
-
-        assertThat(
           connectorFactory.type === ConnectorType.Social &&
             connectorFactory.metadata.isTokenStorageSupported,
           new RequestError({
@@ -292,14 +284,6 @@ export default function connectorRoutes<T extends ManagementApiRouter>(
       }
 
       if (enableTokenStorage) {
-        assertThat(
-          EnvSet.values.secretVaultKek,
-          new RequestError({
-            code: 'request.feature_not_supported',
-            status: 422,
-          })
-        );
-
         assertThat(
           type === ConnectorType.Social && originalMetadata.isTokenStorageSupported,
           new RequestError({

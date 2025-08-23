@@ -185,8 +185,9 @@ export const parseFormDataToRequestPayload = (
         maxValue: cond(maxValue && Number(maxValue)),
         format,
         customFormat,
-        defaultValue:
-          type === CustomProfileFieldType.Checkbox ? String(defaultValue === 'true') : defaultValue,
+        ...(type === CustomProfileFieldType.Checkbox
+          ? { defaultValue: defaultValue === 'true' ? 'true' : 'false' }
+          : {}),
         parts: parts?.map((part) => ({
           enabled: part.enabled,
           name: part.name,
@@ -203,10 +204,11 @@ export const parseFormDataToRequestPayload = (
             options: parseOptionsStringToArray(part.options),
             format: part.format,
             customFormat: part.customFormat,
-            defaultValue:
-              part.type === CustomProfileFieldType.Checkbox
-                ? String(part.defaultValue === 'true')
-                : part.defaultValue,
+            ...(part.type === CustomProfileFieldType.Checkbox
+              ? {
+                  defaultValue: part.defaultValue === 'true' ? 'true' : 'false',
+                }
+              : {}),
           },
         })),
       },

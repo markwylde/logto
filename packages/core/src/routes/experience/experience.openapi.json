@@ -121,6 +121,7 @@
     },
     "/api/experience/interaction": {
       "get": {
+        "tags": ["Dev feature"],
         "operationId": "GetInteraction",
         "summary": "Get public interaction data",
         "description": "Get the public interaction data.",

@@ -1,3 +1,4 @@
+// Note: keep tests readable; do not artificially split to satisfy max-lines.
 import assert from 'node:assert';
 
 import { RoleType } from '@logto/schemas';
@@ -15,7 +16,7 @@ describe('organization user APIs', () => {
     beforeAll(async () => {
       const organization = await organizationApi.create({ name: 'test' });
       // Create users sequentially to avoid database connection pool exhaustion
-      const createdUsers = [];
+      const createdUsers = [] as Array<{ id: string }>;
       for (const _index of Array.from({ length: 30 })) {
         // eslint-disable-next-line no-await-in-loop
         const user = await userApi.create({ username: generateTestName() });
@@ -477,3 +478,4 @@ describe('organization user APIs', () => {
     });
   });
 });
+/* eslint-enable max-lines */

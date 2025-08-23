@@ -150,8 +150,6 @@ export const publicVerificationRecordDataGuard = z.discriminatedUnion('type', [
   passwordVerificationRecordDataGuard,
   emailCodeVerificationRecordDataGuard,
   phoneCodeVerificationRecordDataGuard,
-  mfaEmailCodeVerificationRecordDataGuard,
-  mfaPhoneCodeVerificationRecordDataGuard,
   sanitizedSocialVerificationRecordDataGuard,
   sanitizedEnterpriseSsoVerificationRecordDataGuard,
   sanitizedTotpVerificationRecordDataGuard,

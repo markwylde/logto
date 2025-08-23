@@ -19,6 +19,7 @@ import koaGuard from '#src/middleware/koa-guard.js';
 import koaInteractionDetails from '#src/middleware/koa-interaction-details.js';
 import assertThat from '#src/utils/assert-that.js';
 
+import { EnvSet } from '../../env-set/index.js';
 import { type AnonymousRouter, type RouterInitArgs } from '../types.js';
 
 import experienceAnonymousRoutes from './anonymous-routes/index.js';
@@ -27,6 +28,7 @@ import { experienceRoutes } from './const.js';
 import { koaExperienceInteractionHooks } from './middleware/koa-experience-interaction-hooks.js';
 import koaExperienceInteraction from './middleware/koa-experience-interaction.js';
 import profileRoutes from './profile-routes.js';
+import secretRoutes from './secret-routes.js';
 import {
   sanitizedInteractionStorageGuard,
   type ExperienceInteractionRouterContext,
@@ -191,20 +193,23 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
     }
   );
 
-  experienceRouter.get(
-    `${experienceRoutes.interaction}`,
-    koaGuard({
-      status: [200],
-      response: sanitizedInteractionStorageGuard,
-    }),
-    async (ctx, next) => {
-      const { experienceInteraction } = ctx;
+	  // TODO: @charles remove dev feature guard
+	  if (EnvSet.values.isDevFeaturesEnabled) {
+	    experienceRouter.get(
+	      `${experienceRoutes.interaction}`,
+	      koaGuard({
+	        status: [200],
+	        response: sanitizedInteractionStorageGuard,
+	      }),
+	      async (ctx, next) => {
+	        const { experienceInteraction } = ctx;
 
-      ctx.body = experienceInteraction.toSanitizedJson();
-      ctx.status = 200;
-      return next();
-    }
-  );
+	        ctx.body = experienceInteraction.toSanitizedJson();
+	        ctx.status = 200;
+	        return next();
+	      }
+	    );
+	  }
 
   passwordVerificationRoutes(experienceRouter, tenant);
   verificationCodeRoutes(experienceRouter, tenant);
@@ -217,5 +222,6 @@ export default function experienceApiRoutes<T extends AnonymousRouter>(
   oneTimeTokenRoutes(experienceRouter, tenant);
 
   profileRoutes(experienceRouter, tenant);
+  secretRoutes(experienceRouter, tenant);
   experienceAnonymousRoutes(experienceRouter, tenant);
 }

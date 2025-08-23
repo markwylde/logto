@@ -11,6 +11,7 @@ import NumberIcon from '@/assets/icons/field-type-number.svg?react';
 import RegexIcon from '@/assets/icons/field-type-regex.svg?react';
 import TextIcon from '@/assets/icons/field-type-text.svg?react';
 import UrlIcon from '@/assets/icons/field-type-url.svg?react';
+import DynamicT from '@/ds-components/DynamicT';
 import FormField from '@/ds-components/FormField';
 import Select from '@/ds-components/Select';
 import Switch from '@/ds-components/Switch';
@@ -111,7 +112,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
       <FormField
         isRequired={!isBuiltInFieldName}
         title="sign_in_exp.custom_profile_fields.details.label"
-        tip={t('sign_in_exp.custom_profile_fields.details.label_tooltip')}
+        tip={<DynamicT forKey="sign_in_exp.custom_profile_fields.details.label_tooltip" />}
       >
         <Controller
           name={`${fieldPrefix}label`}
@@ -147,7 +148,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
       {type !== CustomProfileFieldType.Checkbox && (
         <FormField
           title="sign_in_exp.custom_profile_fields.details.placeholder"
-          tip={t('sign_in_exp.custom_profile_fields.details.placeholder_tooltip')}
+          tip={<DynamicT forKey="sign_in_exp.custom_profile_fields.details.placeholder_tooltip" />}
         >
           <TextInput
             {...register(`${fieldPrefix}placeholder`)}
@@ -157,10 +158,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
         </FormField>
       )}
       {type !== CustomProfileFieldType.Checkbox && (
-        <FormField
-          title="sign_in_exp.custom_profile_fields.details.description"
-          tip={t('sign_in_exp.custom_profile_fields.details.description_tooltip')}
-        >
+        <FormField title="sign_in_exp.custom_profile_fields.details.description">
           <TextInput
             {...register(`${fieldPrefix}description`)}
             error={formErrors?.description?.message}
@@ -177,7 +175,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
               }),
             })}
             error={formErrors?.options?.message}
-            description={t('sign_in_exp.custom_profile_fields.details.options_tip')}
+            description={`${t('sign_in_exp.custom_profile_fields.details.options_tip')}`}
             placeholder={t('sign_in_exp.custom_profile_fields.details.options_placeholder')}
             rows={5}
           />
@@ -203,7 +201,7 @@ function ProfileFieldPartSubForm({ index }: Props) {
             })}
             error={formErrors?.format?.message}
             placeholder={t('sign_in_exp.custom_profile_fields.details.regex_placeholder')}
-            description={t('sign_in_exp.custom_profile_fields.details.regex_tip')}
+            description={<DynamicT forKey="sign_in_exp.custom_profile_fields.details.regex_tip" />}
           />
         </FormField>
       )}
@@ -236,7 +234,9 @@ function ProfileFieldPartSubForm({ index }: Props) {
       {type !== CustomProfileFieldType.Checkbox && (
         <FormField title="sign_in_exp.custom_profile_fields.details.required">
           <Switch
-            label={t('sign_in_exp.custom_profile_fields.details.required_description')}
+            label={
+              <DynamicT forKey="sign_in_exp.custom_profile_fields.details.required_description" />
+            }
             {...register(`${fieldPrefix}required`)}
           />
         </FormField>

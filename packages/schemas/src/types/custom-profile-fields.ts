@@ -335,13 +335,16 @@ export const reservedBuiltInProfileKeys = Object.freeze(
   reservedBuiltInProfileKeyGuard.keyof().options
 );
 
-export enum SupportedDateFormat {
+export enum supportedDateFormat {
   US = 'MM/dd/yyyy',
   UK = 'dd/MM/yyyy',
   ISO = 'yyyy-MM-dd',
   Custom = 'custom',
 }
 
+// Backward-compatible alias for consumers importing `SupportedDateFormat`
+// from @logto/schemas. Keep in sync with `supportedDateFormat` above.
+export const SupportedDateFormat = supportedDateFormat;
 export enum Gender {
   Female = 'female',
   Male = 'male',
